@@ -14,7 +14,7 @@ import SettingsCard from "@/components/SettingsCard";
 import ConsoleLog from "@/components/ConsoleLog";
 import ShortcutsModal from "@/components/ShortcutsModal";
 import { useWindPulse } from "@/hooks/useWindPulse";
-import { useTheme, THEMES, type ThemeName } from "@/hooks/useTheme";
+import { useTheme, type ThemeName } from "@/hooks/useTheme";
 import { getSavedDevices, removeSavedDevice, type SavedDevice } from "@/lib/savedDevices";
 
 /* ─── Minimal Toggle ─── */
