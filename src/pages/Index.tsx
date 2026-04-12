@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Play, Square, Monitor, Camera, Tablet,
   Volume2, Smartphone, Wifi, Menu, X, Trash2,
-  Settings, Palette, Check, Plus, ArrowRightLeft, HelpCircle
+  Settings, Plus, ArrowRightLeft, HelpCircle
 } from "lucide-react";
 import HowToUseModal from "@/components/HowToUseModal";
 
