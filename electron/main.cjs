@@ -13,9 +13,9 @@ let nextId = 1;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 900,
-    height: 650,
-    minWidth: 700,
+    width: 1120,
+    height: 700,
+    minWidth: 800,
     minHeight: 500,
     frame: false,
     transparent: false,
