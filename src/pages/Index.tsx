@@ -3,8 +3,10 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Play, Square, Monitor, Camera, Tablet,
   Volume2, Smartphone, Wifi, Menu, X, Trash2,
-  Settings, Palette, Check, Plus, ArrowRightLeft
+  Settings, Palette, Check, Plus, ArrowRightLeft, HelpCircle
 } from "lucide-react";
+import HowToUseModal from "@/components/HowToUseModal";
+import windpulseIcon from "@/assets/windpulse-icon.png";
 import LoadingScreen from "@/components/LoadingScreen";
 import CustomSelect from "@/components/CustomSelect";
 import StatusBadge from "@/components/StatusBadge";
@@ -49,6 +51,7 @@ const slideVariants = {
 const Index = () => {
   const [loading, setLoading] = useState(true);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [howToUseOpen, setHowToUseOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [savedDevices, setSavedDevices] = useState<SavedDevice[]>([]);
   const [activeTab, setActiveTab] = useState<ActiveTab>("mirror");
@@ -161,9 +164,17 @@ const Index = () => {
       {/* Title + status */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
+          <img src={windpulseIcon} alt="WindPulse" width={20} height={20} />
           <h1 className="text-base font-bold text-foreground tracking-tight">WindPulse</h1>
           <StatusBadge status={wp.status} count={wp.sessions.length} />
         </div>
+        <button
+          onClick={() => setHowToUseOpen(true)}
+          className="p-1 rounded-md hover:bg-secondary transition-colors text-muted-foreground hover:text-primary"
+          title="How to use"
+        >
+          <HelpCircle size={15} />
+        </button>
       </div>
 
       {/* Tab Switcher */}
@@ -406,6 +417,7 @@ const Index = () => {
     <>
       <AnimatePresence>{loading && <LoadingScreen onComplete={handleLoadComplete} />}</AnimatePresence>
       <ShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      <HowToUseModal open={howToUseOpen} onClose={() => setHowToUseOpen(false)} />
 
       {/* Mobile Header */}
       <div className="lg:hidden sticky top-0 z-30 bg-card/90 backdrop-blur-md border-b border-border px-3 py-2 flex items-center justify-between">
