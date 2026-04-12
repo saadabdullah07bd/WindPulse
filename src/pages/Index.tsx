@@ -6,7 +6,7 @@ import {
   Settings, Palette, Check, Plus, ArrowRightLeft, HelpCircle
 } from "lucide-react";
 import HowToUseModal from "@/components/HowToUseModal";
-import windpulseIcon from "@/assets/windpulse-icon.png";
+
 import LoadingScreen from "@/components/LoadingScreen";
 import CustomSelect from "@/components/CustomSelect";
 import StatusBadge from "@/components/StatusBadge";
@@ -164,7 +164,7 @@ const Index = () => {
       {/* Title + status */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <img src={windpulseIcon} alt="WindPulse" width={20} height={20} />
+          
           <h1 className="text-base font-bold text-foreground tracking-tight">WindPulse</h1>
           <StatusBadge status={wp.status} count={wp.sessions.length} />
         </div>
