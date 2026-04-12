@@ -405,6 +405,11 @@ const Index = () => {
                   <span className="text-[10px] text-muted-foreground">Platform</span>
                   <span className="text-[10px] font-medium text-foreground">{wp.isElectron ? "Windows (Version V2.0)" : "Web Preview"}</span>
                 </div>
+                <div className="pt-2 border-t border-border space-y-0.5">
+                  <p className="text-[9px] text-muted-foreground">Developed by Muhammad Saad Abdullah</p>
+                  <p className="text-[9px] text-muted-foreground">saadabdullah07bd@gmail.com</p>
+                  <p className="text-[9px] text-muted-foreground/60 mt-1">© 2025 WindPulse. All rights reserved.</p>
+                </div>
               </div>
             </motion.div>
           )}
