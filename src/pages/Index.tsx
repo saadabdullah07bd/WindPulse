@@ -164,9 +164,17 @@ const Index = () => {
       {/* Title + status */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
+          <img src={windpulseIcon} alt="WindPulse" width={20} height={20} />
           <h1 className="text-base font-bold text-foreground tracking-tight">WindPulse</h1>
           <StatusBadge status={wp.status} count={wp.sessions.length} />
         </div>
+        <button
+          onClick={() => setHowToUseOpen(true)}
+          className="p-1 rounded-md hover:bg-secondary transition-colors text-muted-foreground hover:text-primary"
+          title="How to use"
+        >
+          <HelpCircle size={15} />
+        </button>
       </div>
 
       {/* Tab Switcher */}
