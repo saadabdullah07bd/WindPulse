@@ -155,11 +155,11 @@ const Index = () => {
   /* ─── Sidebar Content ─── */
   const sidebarContent = (
     <div className="flex flex-col h-full gap-3">
-      {/* Title + version */}
+      {/* Title + version + status */}
       <div className="flex items-center justify-between">
-        <div>
+        <div className="flex items-center gap-2">
           <h1 className="text-base font-bold text-foreground tracking-tight transition-colors duration-300">WindPulse</h1>
-          <p className="text-[9px] text-muted-foreground/50 font-medium transition-colors duration-300">v2</p>
+          <StatusBadge status={wp.status} count={wp.sessions.length} />
         </div>
       </div>
 
@@ -244,16 +244,16 @@ const Index = () => {
                         <p className="text-[9px] text-muted-foreground/50 transition-colors duration-300">Settings → Developer Options → Wireless debugging → Pair device</p>
                         <input
                           type="text"
-                          value={pairingAddress}
-                          onChange={e => setPairingAddress(e.target.value)}
-                          placeholder="IP:Port (e.g. 192.168.1.5:37123)"
+                          value={pairingCode}
+                          onChange={e => setPairingCode(e.target.value)}
+                          placeholder="Pairing code (e.g. 482956)"
                           className="input-minimal font-mono text-[11px]"
                         />
                         <input
                           type="text"
-                          value={pairingCode}
-                          onChange={e => setPairingCode(e.target.value)}
-                          placeholder="Pairing code (e.g. 482956)"
+                          value={pairingAddress}
+                          onChange={e => setPairingAddress(e.target.value)}
+                          placeholder="IP:Port (e.g. 192.168.1.5:37123)"
                           className="input-minimal font-mono text-[11px]"
                         />
                         <motion.button
@@ -300,8 +300,10 @@ const Index = () => {
                 </div>
               )}
 
-              {/* Start Button + Status + Activity Log */}
+              {/* Activity Log + Start Button */}
               <div className="mt-auto space-y-1.5">
+                <label className="text-[10px] font-medium text-muted-foreground transition-colors duration-300">Activity Log</label>
+                <ConsoleLog logs={wp.logs} />
                 {wp.sessions.length === 0 ? (
                   <button
                     onClick={handleStart}
@@ -317,9 +319,6 @@ const Index = () => {
                     <Square size={13} /> Stop Sessions ({wp.sessions.length})
                   </button>
                 )}
-                <StatusBadge status={wp.status} count={wp.sessions.length} />
-                <label className="text-[10px] font-medium text-muted-foreground transition-colors duration-300">Activity Log</label>
-                <ConsoleLog logs={wp.logs} />
               </div>
             </motion.div>
           ) : (
@@ -376,7 +375,7 @@ const Index = () => {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-muted-foreground transition-colors duration-300">Platform</span>
-                  <span className="text-[10px] font-medium text-foreground transition-colors duration-300">{wp.isElectron ? "Desktop" : "Web Preview"}</span>
+                  <span className="text-[10px] font-medium text-foreground transition-colors duration-300">{wp.isElectron ? "Windows (Version V2.0)" : "Web Preview"}</span>
                 </div>
               </div>
             </motion.div>
