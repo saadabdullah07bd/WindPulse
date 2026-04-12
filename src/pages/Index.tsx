@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Play, Square, Monitor, Camera, Tablet,
   Volume2, Smartphone, Wifi, Menu, X, Trash2,
-  Settings, Palette, Check, Plus, ArrowRightLeft, HelpCircle
+  Settings, Plus, ArrowRightLeft, HelpCircle
 } from "lucide-react";
 import HowToUseModal from "@/components/HowToUseModal";
 
@@ -14,7 +14,7 @@ import SettingsCard from "@/components/SettingsCard";
 import ConsoleLog from "@/components/ConsoleLog";
 import ShortcutsModal from "@/components/ShortcutsModal";
 import { useWindPulse } from "@/hooks/useWindPulse";
-import { useTheme, THEMES, type ThemeName } from "@/hooks/useTheme";
+import { useTheme, type ThemeName } from "@/hooks/useTheme";
 import { getSavedDevices, removeSavedDevice, type SavedDevice } from "@/lib/savedDevices";
 
 /* ─── Minimal Toggle ─── */
@@ -359,41 +359,6 @@ const Index = () => {
               variants={slideVariants}
               transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
             >
-              {/* Theme Section */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Palette size={13} className="text-primary" />
-                  <span className="text-[11px] font-semibold text-foreground">Theme</span>
-                </div>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {THEMES.map((t) => (
-                    <button
-                      key={t.id}
-                      onClick={() => themeCtx.setTheme(t.id)}
-                      className={`relative flex flex-col items-center gap-1 p-1.5 rounded-lg border transition-colors ${
-                        themeCtx.theme === t.id
-                          ? "border-primary bg-primary/5 shadow-sm"
-                          : "border-transparent hover:bg-secondary"
-                      }`}
-                    >
-                      <div className={`w-6 h-6 rounded-full ${t.preview} border border-border`}>
-                        {themeCtx.theme === t.id && (
-                          <motion.div
-                            className="w-full h-full flex items-center justify-center"
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                          >
-                            <Check size={10} className="text-primary" />
-                          </motion.div>
-                        )}
-                      </div>
-                      <span className="text-[8px] font-medium text-muted-foreground">{t.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               {/* About */}
               <div className="space-y-1.5 pt-2 border-t border-border">
                 <div className="flex items-center justify-between">
