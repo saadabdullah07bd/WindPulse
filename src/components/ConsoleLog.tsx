@@ -1,6 +1,6 @@
 import { forwardRef, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { LogEntry } from "@/hooks/useWindPulse";
+import type { LogEntry } from "@/types/log";
 
 const dotColors: Record<string, string> = {
   info: "bg-muted-foreground/40",
