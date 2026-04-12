@@ -19,7 +19,15 @@
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
   </head>
 
-  <body style="background-color: hsl(30, 15%, 90%); margin: 0;">
+  <body style="margin: 0;">
+    <script>
+      (function(){
+        var t=localStorage.getItem("windpulse-theme")||"light";
+        var c={light:"hsl(30,15%,90%)",dark:"hsl(25,12%,8%)",midnight:"hsl(230,25%,10%)",ocean:"hsl(200,30%,12%)",rose:"hsl(340,20%,92%)",monochrome:"hsl(0,0%,7%)",forest:"hsl(150,20%,10%)",sunset:"hsl(15,25%,92%)"};
+        document.body.style.backgroundColor=c[t]||c.light;
+        if(t!=="light")document.documentElement.classList.add(t);
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
