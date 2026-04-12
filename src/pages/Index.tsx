@@ -51,6 +51,7 @@ const slideVariants = {
 const Index = () => {
   const [loading, setLoading] = useState(true);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [howToUseOpen, setHowToUseOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [savedDevices, setSavedDevices] = useState<SavedDevice[]>([]);
   const [activeTab, setActiveTab] = useState<ActiveTab>("mirror");
