@@ -107,12 +107,21 @@ ipcMain.handle("adb:tcpip", (_e, serial) => runAdb(["-s", serial, "tcpip", "5555
 ipcMain.handle("adb:disconnect", (_e, serial) => runAdb(["disconnect", serial]));
 
 ipcMain.handle("adb:pair", async (_e, address, code) => {
+  // Try passing code as argument first (more reliable)
+  const res = await runAdb(["pair", address, code]);
+  if (res.success && res.stdout && res.stdout.toLowerCase().includes("successfully")) {
+    return { success: true, message: res.stdout.trim() };
+  }
+  // Fallback: use stdin-based pairing
   return new Promise((resolve) => {
     const proc = spawn(ADB, ["pair", address], { timeout: 30000 });
     let output = "";
     proc.stdout.on("data", (d) => { output += d.toString(); });
     proc.stderr.on("data", (d) => { output += d.toString(); });
-    proc.stdin.write(code + "\n");
+    // Wait briefly for the prompt, then write the code
+    setTimeout(() => {
+      try { proc.stdin.write(code + "\n"); } catch (e) {}
+    }, 500);
     proc.on("close", (exitCode) => {
       if (exitCode === 0 && output.toLowerCase().includes("successfully")) {
         resolve({ success: true, message: output.trim() });
