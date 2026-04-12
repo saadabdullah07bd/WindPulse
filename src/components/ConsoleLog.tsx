@@ -1,12 +1,6 @@
+import { forwardRef, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRef, useEffect } from "react";
-
-export interface LogEntry {
-  id: number;
-  time: string;
-  message: string;
-  type: "info" | "success" | "error" | "warning";
-}
+import type { LogEntry } from "@/hooks/useWindPulse";
 
 const dotColors: Record<string, string> = {
   info: "bg-muted-foreground/40",
@@ -15,7 +9,7 @@ const dotColors: Record<string, string> = {
   warning: "bg-warning",
 };
 
-const ConsoleLog = ({ logs }: { logs: LogEntry[] }) => {
+const ConsoleLog = forwardRef<HTMLDivElement, { logs: LogEntry[] }>(({ logs }, _ref) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -33,7 +27,7 @@ const ConsoleLog = ({ logs }: { logs: LogEntry[] }) => {
             key={log.id}
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: 0.12 }}
             className="flex items-start gap-2"
           >
             <span className={`mt-2 shrink-0 w-1.5 h-1.5 rounded-full ${dotColors[log.type]}`} />
@@ -47,6 +41,8 @@ const ConsoleLog = ({ logs }: { logs: LogEntry[] }) => {
       )}
     </div>
   );
-};
+});
+
+ConsoleLog.displayName = "ConsoleLog";
 
 export default ConsoleLog;
