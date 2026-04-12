@@ -6,7 +6,7 @@ const fs = require("fs");
 const BIN = path.join(app.isPackaged ? process.resourcesPath : __dirname, "..", "bin");
 const ADB = path.join(BIN, process.platform === "win32" ? "adb.exe" : "adb");
 const SCRCPY = path.join(BIN, process.platform === "win32" ? "scrcpy.exe" : "scrcpy");
-const APP_ICON = path.join(app.isPackaged ? process.resourcesPath : __dirname, "..", "public", "icon.png");
+
 
 let mainWindow;
 const scrcpyProcesses = new Map();
