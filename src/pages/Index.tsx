@@ -1,12 +1,11 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Play, Square, Monitor, Camera, Tablet,
   Volume2, Smartphone, Wifi, Menu, X, Trash2,
-  Settings, Plus, ArrowRightLeft, HelpCircle
+  Plus, ArrowRightLeft, HelpCircle
 } from "lucide-react";
 import HowToUseModal from "@/components/HowToUseModal";
-
 import LoadingScreen from "@/components/LoadingScreen";
 import CustomSelect from "@/components/CustomSelect";
 import StatusBadge from "@/components/StatusBadge";
@@ -14,7 +13,6 @@ import SettingsCard from "@/components/SettingsCard";
 import ConsoleLog from "@/components/ConsoleLog";
 import ShortcutsModal from "@/components/ShortcutsModal";
 import { useWindPulse } from "@/hooks/useWindPulse";
-import { useTheme, type ThemeName } from "@/hooks/useTheme";
 import { getSavedDevices, removeSavedDevice, type SavedDevice } from "@/lib/savedDevices";
 
 /* ─── Minimal Toggle ─── */
@@ -37,27 +35,13 @@ const Toggle = ({ checked, onChange, label }: { checked: boolean; onChange: (v: 
   </label>
 );
 
-/* ─── Active Tab type ─── */
-type ActiveTab = "mirror" | "settings";
-
-const slideVariants = {
-  enterFromRight: { x: 60, opacity: 0 },
-  enterFromLeft: { x: -60, opacity: 0 },
-  center: { x: 0, opacity: 1 },
-  exitToLeft: { x: -60, opacity: 0 },
-  exitToRight: { x: 60, opacity: 0 },
-};
-
 const Index = () => {
   const [loading, setLoading] = useState(true);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [howToUseOpen, setHowToUseOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [savedDevices, setSavedDevices] = useState<SavedDevice[]>([]);
-  const [activeTab, setActiveTab] = useState<ActiveTab>("mirror");
-  const prevTab = useRef<ActiveTab>("mirror");
   const [pairingOpen, setPairingOpen] = useState(false);
-  const themeCtx = useTheme();
 
   // Wireless debugging pairing
   const [pairingCode, setPairingCode] = useState("");
@@ -67,7 +51,6 @@ const Index = () => {
   const [audioOnly, setAudioOnly] = useState(false);
   const [enableMirror, setEnableMirror] = useState(true);
   const [disableAudio, setDisableAudio] = useState(false);
-  const [recordSession, setRecordSession] = useState(false);
   const [encoder, setEncoder] = useState("H.264 (AVC)");
   const [bitrate, setBitrate] = useState(12);
   const [enableCamera, setEnableCamera] = useState(false);
@@ -108,10 +91,10 @@ const Index = () => {
     wp.startMirror({
       audioOnly, enableMirror, enableCamera, tabletMode,
       encoder, bitrate, camSource, camRes, camFps, camOrientation,
-      noCamAudio, disableAudio, recordSession, keepAwake, screenOff,
+      noCamAudio, disableAudio, recordSession: false, keepAwake, screenOff,
       hidKeyboard, hidMouse, tabletRes, tabletDpi,
     });
-  }, [wp, audioOnly, enableMirror, enableCamera, tabletMode, encoder, bitrate, camSource, camRes, camFps, camOrientation, noCamAudio, disableAudio, recordSession, keepAwake, screenOff, hidKeyboard, hidMouse, tabletRes, tabletDpi]);
+  }, [wp, audioOnly, enableMirror, enableCamera, tabletMode, encoder, bitrate, camSource, camRes, camFps, camOrientation, noCamAudio, disableAudio, keepAwake, screenOff, hidKeyboard, hidMouse, tabletRes, tabletDpi]);
 
   const handleModeSwitch = useCallback((mode: string) => {
     if (mode === "audioOnly") { setAudioOnly(true); setEnableMirror(false); setEnableCamera(false); setTabletMode(false); }
@@ -141,19 +124,12 @@ const Index = () => {
     }
   }, [pairingAddress, pairingCode, wp]);
 
-  const handleTabSwitch = useCallback((tab: ActiveTab) => {
-    prevTab.current = activeTab;
-    setActiveTab(tab);
-  }, [activeTab]);
-
   const handleSwitchToWireless = useCallback((serial: string) => {
     wp.activateWireless(serial);
   }, [wp]);
 
-  const slideDirection = activeTab === "settings" ? "right" : "left";
   const connectionType = wp.getConnectionType(wp.selectedDevice);
 
-  // Memoize device options to avoid re-creating every render
   const deviceOptions = useMemo(() => {
     return wp.devices.length === 0 ? ["Searching..."] : wp.devices.map(d => d.name);
   }, [wp.devices]);
@@ -176,203 +152,153 @@ const Index = () => {
         </button>
       </div>
 
-      {/* Tab Switcher */}
-      <div className="flex bg-secondary/60 rounded-lg p-0.5 gap-0.5 relative">
-        <motion.div
-          className="absolute top-0.5 bottom-0.5 rounded-md bg-card shadow-sm"
-          animate={{ x: activeTab === "mirror" ? 0 : "100%" }}
-          style={{ width: "calc(50% - 2px)" }}
-          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      {/* Device selector */}
+      <div className="space-y-1.5">
+        <label className="text-[10px] font-medium text-muted-foreground">Device</label>
+        <CustomSelect
+          value={wp.devices.find(d => d.serial === wp.selectedDevice)?.name || ""}
+          onChange={(name) => {
+            const device = wp.devices.find(d => d.name === name);
+            if (device) wp.setSelectedDevice(device.serial);
+          }}
+          options={deviceOptions}
+          placeholder="Searching..."
         />
-        <button
-          onClick={() => handleTabSwitch("mirror")}
-          className={`flex-1 py-1.5 rounded-md text-[11px] font-semibold transition-colors relative z-10 ${activeTab === "mirror" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-        >
-          Mirror
-        </button>
-        <button
-          onClick={() => handleTabSwitch("settings")}
-          className={`flex-1 py-1.5 rounded-md text-[11px] font-semibold transition-colors flex items-center justify-center gap-1 relative z-10 ${activeTab === "settings" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-        >
-          <Settings size={11} /> Settings
-        </button>
+        <p className="text-[9px] text-muted-foreground/60 text-center font-medium">
+          {wp.selectedDevice ? `${connectionType} connection` : "Scanning..."}
+        </p>
+
+        {/* USB → Wireless switch button */}
+        {connectionType === "USB" && wp.selectedDevice && (
+          <motion.button
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            onClick={() => handleSwitchToWireless(wp.selectedDevice)}
+            className="w-full flex items-center justify-center gap-2 py-1.5 rounded-lg text-[10px] font-medium text-primary border border-primary/20 hover:bg-primary/5 transition-colors"
+          >
+            <ArrowRightLeft size={12} />
+            Switch to Wireless (TCP/IP)
+          </motion.button>
+        )}
       </div>
 
-      {/* Tab Content */}
-      <div className="flex-1 min-h-0 overflow-hidden relative">
-        <AnimatePresence mode="wait" initial={false}>
-          {activeTab === "mirror" ? (
+      {/* Wireless Pairing */}
+      <div className="space-y-1.5">
+        <button
+          onClick={() => setPairingOpen(!pairingOpen)}
+          className="flex items-center justify-between w-full group"
+        >
+          <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">Wireless Pairing</span>
+          <motion.div
+            animate={{ rotate: pairingOpen ? 45 : 0 }}
+            transition={{ duration: 0.2 }}
+            className="w-5 h-5 rounded-md flex items-center justify-center bg-secondary/80 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors"
+          >
+            <Plus size={12} />
+          </motion.div>
+        </button>
+
+        <AnimatePresence>
+          {pairingOpen && (
             <motion.div
-              key="mirror-tab"
-              className="flex flex-col h-full gap-3"
-              initial={slideDirection === "left" ? "enterFromLeft" : "enterFromRight"}
-              animate="center"
-              exit={slideDirection === "left" ? "exitToRight" : "exitToLeft"}
-              variants={slideVariants}
-              transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+              className="overflow-hidden"
             >
-              {/* Device selector */}
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-medium text-muted-foreground">Device</label>
-                <CustomSelect
-                  value={wp.devices.find(d => d.serial === wp.selectedDevice)?.name || ""}
-                  onChange={(name) => {
-                    const device = wp.devices.find(d => d.name === name);
-                    if (device) wp.setSelectedDevice(device.serial);
-                  }}
-                  options={deviceOptions}
-                  placeholder="Searching..."
+              <div className="space-y-1.5 pt-1">
+                <p className="text-[9px] text-muted-foreground/50">Settings → Developer Options → Wireless debugging → Pair device</p>
+                <input
+                  type="text"
+                  value={pairingCode}
+                  onChange={e => setPairingCode(e.target.value)}
+                  placeholder="Pairing code (e.g. 482956)"
+                  className="input-minimal font-mono text-[11px]"
                 />
-                <p className="text-[9px] text-muted-foreground/60 text-center font-medium">
-                  {wp.selectedDevice ? `${connectionType} connection` : "Scanning..."}
-                </p>
-
-                {/* USB → Wireless switch button */}
-                {connectionType === "USB" && wp.selectedDevice && (
-                  <motion.button
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    onClick={() => handleSwitchToWireless(wp.selectedDevice)}
-                    className="w-full flex items-center justify-center gap-2 py-1.5 rounded-lg text-[10px] font-medium text-primary border border-primary/20 hover:bg-primary/5 transition-colors"
-                  >
-                    <ArrowRightLeft size={12} />
-                    Switch to Wireless (TCP/IP)
-                  </motion.button>
-                )}
-              </div>
-
-              {/* Wireless Pairing */}
-              <div className="space-y-1.5">
-                <button
-                  onClick={() => setPairingOpen(!pairingOpen)}
-                  className="flex items-center justify-between w-full group"
+                <input
+                  type="text"
+                  value={pairingAddress}
+                  onChange={e => setPairingAddress(e.target.value)}
+                  placeholder="IP:Port (e.g. 192.168.1.5:37123)"
+                  className="input-minimal font-mono text-[11px]"
+                />
+                <motion.button
+                  onClick={handlePair}
+                  className="w-full py-1.5 rounded-lg text-[10px] font-medium text-primary border border-primary/20 hover:bg-primary/5 transition-colors"
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">Wireless Pairing</span>
-                  <motion.div
-                    animate={{ rotate: pairingOpen ? 45 : 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="w-5 h-5 rounded-md flex items-center justify-center bg-secondary/80 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors"
-                  >
-                    <Plus size={12} />
-                  </motion.div>
-                </button>
-
-                <AnimatePresence>
-                  {pairingOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2, ease: "easeInOut" }}
-                      className="overflow-hidden"
-                    >
-                      <div className="space-y-1.5 pt-1">
-                        <p className="text-[9px] text-muted-foreground/50">Settings → Developer Options → Wireless debugging → Pair device</p>
-                        <input
-                          type="text"
-                          value={pairingCode}
-                          onChange={e => setPairingCode(e.target.value)}
-                          placeholder="Pairing code (e.g. 482956)"
-                          className="input-minimal font-mono text-[11px]"
-                        />
-                        <input
-                          type="text"
-                          value={pairingAddress}
-                          onChange={e => setPairingAddress(e.target.value)}
-                          placeholder="IP:Port (e.g. 192.168.1.5:37123)"
-                          className="input-minimal font-mono text-[11px]"
-                        />
-                        <motion.button
-                          onClick={handlePair}
-                          className="w-full py-1.5 rounded-lg text-[10px] font-medium text-primary border border-primary/20 hover:bg-primary/5 transition-colors"
-                          whileHover={{ scale: 1.01 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          Pair Device
-                        </motion.button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Saved Wireless Devices */}
-              {savedDevices.length > 0 && (
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-medium text-muted-foreground">Saved Devices</label>
-                  <div className="space-y-1">
-                    {savedDevices.map(d => (
-                      <div
-                        key={d.ip}
-                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors group"
-                      >
-                        <Wifi size={11} className="text-primary shrink-0" />
-                        <button
-                          onClick={() => handleConnectIp(d.ip)}
-                          className="flex-1 text-left text-[11px] text-foreground truncate"
-                        >
-                          <span className="font-medium">{d.name !== d.ip ? d.name : ""}</span>
-                          <span className="font-mono text-muted-foreground ml-1">{d.ip}</span>
-                        </button>
-                        <button
-                          onClick={() => handleRemoveSaved(d.ip)}
-                          className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-opacity"
-                        >
-                          <Trash2 size={11} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Activity Log + Start Button */}
-              <div className="mt-auto space-y-1.5">
-                <label className="text-[10px] font-medium text-muted-foreground">Activity Log</label>
-                <ConsoleLog logs={wp.logs} />
-                {wp.sessions.length === 0 ? (
-                  <button
-                    onClick={handleStart}
-                    className="btn-primary flex items-center justify-center gap-2 py-2.5 text-[12px] w-full"
-                  >
-                    <Play size={14} /> Start Mirror
-                  </button>
-                ) : (
-                  <button
-                    onClick={wp.stopAll}
-                    className="btn-outline flex items-center justify-center gap-2 border-destructive/30 text-destructive hover:bg-destructive/5 py-2.5 text-[12px] w-full"
-                  >
-                    <Square size={13} /> Stop Sessions ({wp.sessions.length})
-                  </button>
-                )}
-              </div>
-            </motion.div>
-          ) : (
-            /* Settings Tab */
-            <motion.div
-              key="settings-tab"
-              className="h-full overflow-y-auto scrollbar-minimal space-y-3"
-              initial={slideDirection === "right" ? "enterFromRight" : "enterFromLeft"}
-              animate="center"
-              exit={slideDirection === "right" ? "exitToLeft" : "exitToRight"}
-              variants={slideVariants}
-              transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-            >
-              {/* About */}
-              <div className="space-y-1.5 pt-2 border-t border-border">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-muted-foreground">Version</span>
-                  <span className="text-[10px] font-semibold text-foreground">WindPulse v2</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-muted-foreground">Platform</span>
-                  <span className="text-[10px] font-medium text-foreground">{wp.isElectron ? "Windows (Version V2.0)" : "Web Preview"}</span>
-                </div>
+                  Pair Device
+                </motion.button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
+
+      {/* Saved Wireless Devices */}
+      {savedDevices.length > 0 && (
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-medium text-muted-foreground">Saved Devices</label>
+          <div className="space-y-1">
+            {savedDevices.map(d => (
+              <div
+                key={d.ip}
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors group"
+              >
+                <Wifi size={11} className="text-primary shrink-0" />
+                <button
+                  onClick={() => handleConnectIp(d.ip)}
+                  className="flex-1 text-left text-[11px] text-foreground truncate"
+                >
+                  <span className="font-medium">{d.name !== d.ip ? d.name : ""}</span>
+                  <span className="font-mono text-muted-foreground ml-1">{d.ip}</span>
+                </button>
+                <button
+                  onClick={() => handleRemoveSaved(d.ip)}
+                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-opacity"
+                >
+                  <Trash2 size={11} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Activity Log + Start Button */}
+      <div className="mt-auto space-y-1.5">
+        <label className="text-[10px] font-medium text-muted-foreground">Activity Log</label>
+        <ConsoleLog logs={wp.logs} />
+        {wp.sessions.length === 0 ? (
+          <button
+            onClick={handleStart}
+            className="btn-primary flex items-center justify-center gap-2 py-2.5 text-[12px] w-full"
+          >
+            <Play size={14} /> Start Mirror
+          </button>
+        ) : (
+          <button
+            onClick={wp.stopAll}
+            className="btn-outline flex items-center justify-center gap-2 border-destructive/30 text-destructive hover:bg-destructive/5 py-2.5 text-[12px] w-full"
+          >
+            <Square size={13} /> Stop Sessions ({wp.sessions.length})
+          </button>
+        )}
+      </div>
+
+      {/* Version info */}
+      <div className="space-y-1 pt-2 border-t border-border">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] text-muted-foreground">Version</span>
+          <span className="text-[10px] font-semibold text-foreground">WindPulse v2</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] text-muted-foreground">Platform</span>
+          <span className="text-[10px] font-medium text-foreground">{wp.isElectron ? "Windows (Version V2.0)" : "Web Preview"}</span>
+        </div>
       </div>
     </div>
   );
