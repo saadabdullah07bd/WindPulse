@@ -6,7 +6,7 @@ const fs = require("fs");
 const BIN = path.join(app.isPackaged ? process.resourcesPath : __dirname, "..", "bin");
 const ADB = path.join(BIN, process.platform === "win32" ? "adb.exe" : "adb");
 const SCRCPY = path.join(BIN, process.platform === "win32" ? "scrcpy.exe" : "scrcpy");
-const APP_ICON = path.join(app.isPackaged ? process.resourcesPath : __dirname, "..", "public", "icon.png");
+
 
 let mainWindow;
 const scrcpyProcesses = new Map();
@@ -140,11 +140,6 @@ ipcMain.handle("adb:pair", async (_e, address, code) => {
 ipcMain.handle("scrcpy:start", (_e, args) => {
   try {
     const id = nextId++;
-    // Replace relative icon.png with absolute path
-    const iconIdx = args.indexOf("--window-icon");
-    if (iconIdx !== -1 && iconIdx + 1 < args.length) {
-      args[iconIdx + 1] = APP_ICON;
-    }
     const proc = spawn(SCRCPY, args, { cwd: BIN });
     scrcpyProcesses.set(id, proc);
     proc.stdout.on("data", (d) => mainWindow?.webContents.send("scrcpy:stdout", { id, data: d.toString() }));
