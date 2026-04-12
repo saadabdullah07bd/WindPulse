@@ -417,6 +417,7 @@ const Index = () => {
     <>
       <AnimatePresence>{loading && <LoadingScreen onComplete={handleLoadComplete} />}</AnimatePresence>
       <ShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      <HowToUseModal open={howToUseOpen} onClose={() => setHowToUseOpen(false)} />
 
       {/* Mobile Header */}
       <div className="lg:hidden sticky top-0 z-30 bg-card/90 backdrop-blur-md border-b border-border px-3 py-2 flex items-center justify-between">
