@@ -3,8 +3,10 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Play, Square, Monitor, Camera, Tablet,
   Volume2, Smartphone, Wifi, Menu, X, Trash2,
-  Settings, Palette, Check, Plus, ArrowRightLeft
+  Settings, Palette, Check, Plus, ArrowRightLeft, HelpCircle
 } from "lucide-react";
+import HowToUseModal from "@/components/HowToUseModal";
+import windpulseIcon from "@/assets/windpulse-icon.png";
 import LoadingScreen from "@/components/LoadingScreen";
 import CustomSelect from "@/components/CustomSelect";
 import StatusBadge from "@/components/StatusBadge";
