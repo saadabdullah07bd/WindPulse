@@ -216,6 +216,8 @@ export function useWindPulse() {
       const device = devices.find(d => d.serial === selectedDevice);
       const displayName = device?.name || device?.model || selectedDevice;
       args.push("--window-title", displayName);
+      // Use app icon for the scrcpy window
+      args.push("--window-icon", "icon.png");
     }
 
     if (!isElectron()) {
