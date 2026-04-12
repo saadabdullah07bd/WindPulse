@@ -408,7 +408,7 @@ const Index = () => {
                 <div className="pt-2 border-t border-border space-y-0.5">
                   <p className="text-[9px] text-muted-foreground">Developed by Muhammad Saad Abdullah</p>
                   <p className="text-[9px] text-muted-foreground">saadabdullah07bd@gmail.com</p>
-                  <p className="text-[9px] text-muted-foreground/60 mt-1">© 2025 WindPulse. All rights reserved.</p>
+                  <p className="text-[9px] text-muted-foreground/60 mt-1">© 2026 WindPulse. All rights reserved.</p>
                 </div>
               </div>
             </motion.div>
