@@ -28,32 +28,60 @@ export function useWindPulse() {
   const [sessions, setSessions] = useState<number[]>([]);
   const [binariesOk, setBinariesOk] = useState(true);
   const pollRef = useRef<ReturnType<typeof setInterval>>();
+  const selectedDeviceRef = useRef(selectedDevice);
+
+  // Keep ref in sync to avoid stale closures in polling
+  useEffect(() => {
+    selectedDeviceRef.current = selectedDevice;
+  }, [selectedDevice]);
 
   const addLog = useCallback((message: string, type: LogEntry["type"] = "info") => {
     const time = new Date().toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
     setLogs(prev => [...prev.slice(-200), { id: ++logIdCounter, time, message, type }]);
   }, []);
 
+  const refreshDevices = useCallback(async () => {
+    if (!isElectron()) return;
+    const api = getApi()!;
+    const res = await api.adbDevices();
+    if (!res.success) return;
+
+    // Fetch friendly names for each device
+    const devicesWithNames = await Promise.all(
+      res.devices.map(async (d) => {
+        try {
+          const nameRes = await api.adbGetDeviceName(d.serial);
+          if (nameRes.success && nameRes.name) return { ...d, name: nameRes.name };
+        } catch { /* use default */ }
+        return d;
+      })
+    );
+
+    setDevices(devicesWithNames);
+    if (devicesWithNames.length > 0 && !devicesWithNames.find(d => d.serial === selectedDeviceRef.current)) {
+      setSelectedDevice(devicesWithNames[0].serial);
+    }
+  }, []);
+
   // Boot
   useEffect(() => {
     if (!isElectron()) {
-      // Demo / web preview mode
       addLog("Running in web preview mode", "warning");
       addLog("Electron IPC not available — using simulated data", "info");
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         setStatus("ready");
         setDevices([{ serial: "demo", model: "Demo Device", name: "Demo Device (preview)" }]);
         setSelectedDevice("demo");
         addLog("Demo device loaded", "success");
       }, 1200);
-      return;
+      return () => clearTimeout(timer);
     }
 
     const api = getApi()!;
     (async () => {
       const bins = await api.checkBinaries();
-      if (!bins.scrcpyExists) { addLog("CRITICAL: scrcpy.exe not found in bin/", "error"); setBinariesOk(false); }
-      if (!bins.adbExists) { addLog("CRITICAL: adb.exe not found in bin/", "error"); setBinariesOk(false); }
+      if (!bins.scrcpyExists) { addLog("CRITICAL: scrcpy not found in bin/", "error"); setBinariesOk(false); }
+      if (!bins.adbExists) { addLog("CRITICAL: adb not found in bin/", "error"); setBinariesOk(false); }
 
       addLog("Starting ADB server...", "info");
       const res = await api.adbStartServer();
@@ -63,13 +91,8 @@ export function useWindPulse() {
       await refreshDevices();
     })();
 
-    // Listen to scrcpy events
-    const unsub1 = api.onScrcpyStdout(({ data }) => {
-      if (data?.trim()) addLog(data.trim(), "info");
-    });
-    const unsub2 = api.onScrcpyStderr(({ data }) => {
-      if (data?.trim()) addLog(data.trim(), "warning");
-    });
+    const unsub1 = api.onScrcpyStdout(({ data }) => { if (data?.trim()) addLog(data.trim(), "info"); });
+    const unsub2 = api.onScrcpyStderr(({ data }) => { if (data?.trim()) addLog(data.trim(), "warning"); });
     const unsub3 = api.onScrcpyClosed(({ id, code }) => {
       addLog(`Session ${id} ended (code ${code})`, "info");
       setSessions(prev => prev.filter(s => s !== id));
@@ -79,50 +102,24 @@ export function useWindPulse() {
       setSessions(prev => prev.filter(s => s !== id));
     });
 
-    // Poll devices every 3s
     pollRef.current = setInterval(refreshDevices, 3000);
 
     return () => {
       unsub1(); unsub2(); unsub3(); unsub4();
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, []);
+  }, [addLog, refreshDevices]);
 
   // Update status based on sessions/devices
   useEffect(() => {
     if (sessions.length > 0) setStatus("active");
     else if (devices.length > 0) setStatus("ready");
     else if (status !== "initializing") setStatus("disconnected");
-  }, [sessions, devices]);
-
-  const refreshDevices = useCallback(async () => {
-    if (!isElectron()) return;
-    const res = await getApi()!.adbDevices();
-    if (res.success) {
-      // Fetch user-set device names for each device
-      const api = getApi()!;
-      const devicesWithNames = await Promise.all(
-        res.devices.map(async (d) => {
-          try {
-            const nameRes = await api.adbGetDeviceName(d.serial);
-            if (nameRes.success && nameRes.name) {
-              return { ...d, name: nameRes.name };
-            }
-          } catch {}
-          return d;
-        })
-      );
-      setDevices(devicesWithNames);
-      if (devicesWithNames.length > 0 && !devicesWithNames.find(d => d.serial === selectedDevice)) {
-        setSelectedDevice(devicesWithNames[0].serial);
-      }
-    }
-  }, [selectedDevice]);
+  }, [sessions, devices, status]);
 
   const connectIp = useCallback(async (ip: string) => {
     if (!isElectron()) {
       addLog(`Simulated connect to ${ip}`, "success");
-      // Save to localStorage even in preview
       const { saveDevice } = await import("@/lib/savedDevices");
       saveDevice(ip);
       return;
@@ -131,7 +128,6 @@ export function useWindPulse() {
     const res = await getApi()!.adbConnect(ip);
     if (res.success) {
       addLog(res.message || "Connected", "success");
-      // Save wireless device for future reconnection
       const { saveDevice } = await import("@/lib/savedDevices");
       saveDevice(ip);
       setTimeout(refreshDevices, 2000);
@@ -140,15 +136,16 @@ export function useWindPulse() {
     }
   }, [addLog, refreshDevices]);
 
-  const activateWireless = useCallback(async () => {
-    if (!selectedDevice || !isElectron()) {
+  const activateWireless = useCallback(async (serial?: string) => {
+    const target = serial || selectedDevice;
+    if (!target || !isElectron()) {
       addLog("Select a USB device first", "warning");
       return;
     }
-    addLog("Activating wireless mode...", "info");
-    const res = await getApi()!.adbTcpip(selectedDevice);
+    addLog(`Activating wireless mode on ${target}...`, "info");
+    const res = await getApi()!.adbTcpip(target);
     if (res.success) {
-      addLog("TCP/IP mode activated. Unplug USB.", "success");
+      addLog("TCP/IP mode activated on port 5555. You can now unplug USB and connect via IP.", "success");
       setTimeout(refreshDevices, 3000);
     } else {
       addLog(`Wireless activation failed: ${res.error}`, "error");
@@ -197,9 +194,7 @@ export function useWindPulse() {
         args.push("--camera-size", config.camRes || "1920x1080");
         const orient = config.camOrientation || "Normal";
         if (orient !== "Normal") {
-          const orientMap: Record<string, string> = {
-            "90° CW": "90", "180°": "180", "270° CW": "270", "Flip": "flip0"
-          };
+          const orientMap: Record<string, string> = { "90° CW": "90", "180°": "180", "270° CW": "270", "Flip": "flip0" };
           if (orientMap[orient]) args.push(`--capture-orientation=${orientMap[orient]}`);
         }
         if (config.noCamAudio) args.push("--no-audio");
