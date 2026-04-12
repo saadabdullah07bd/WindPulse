@@ -29,7 +29,7 @@ export function useTheme() {
     localStorage.setItem("windpulse-theme", theme);
   }, [theme]);
 
-  const dark = theme !== "light" && theme !== "rose" && theme !== "sunset";
+  const dark = theme !== "light" && theme !== "rose" && theme !== "sand";
 
   return {
     theme,
