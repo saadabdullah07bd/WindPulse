@@ -3,12 +3,8 @@ import type { DeviceInfo, ScrcpyEvent } from "@/types/windpulse";
 
 export type ConnectionStatus = "initializing" | "ready" | "active" | "disconnected";
 
-export interface LogEntry {
-  id: number;
-  time: string;
-  message: string;
-  type: "info" | "success" | "error" | "warning";
-}
+export type { LogEntry } from "@/types/log";
+import type { LogEntry } from "@/types/log";
 
 let logIdCounter = 0;
 
