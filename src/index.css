@@ -11,38 +11,38 @@ html, body {
 
 @layer base {
   :root {
-    --background: 30 15% 90%;
-    --foreground: 30 10% 10%;
-    --card: 30 20% 95%;
-    --card-foreground: 30 10% 10%;
-    --popover: 30 20% 95%;
-    --popover-foreground: 30 10% 10%;
+    --background: 0 0% 98%;
+    --foreground: 220 10% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 10% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 10% 12%;
     --primary: 24 80% 50%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 30 14% 86%;
-    --secondary-foreground: 30 10% 35%;
-    --muted: 30 14% 86%;
-    --muted-foreground: 30 8% 50%;
-    --accent: 30 14% 88%;
-    --accent-foreground: 30 10% 10%;
+    --secondary: 220 8% 93%;
+    --secondary-foreground: 220 8% 35%;
+    --muted: 220 8% 93%;
+    --muted-foreground: 220 6% 46%;
+    --accent: 220 8% 95%;
+    --accent-foreground: 220 10% 12%;
     --destructive: 0 68% 56%;
     --destructive-foreground: 0 0% 100%;
-    --border: 30 12% 84%;
-    --input: 30 12% 84%;
+    --border: 220 8% 90%;
+    --input: 220 8% 90%;
     --ring: 24 80% 50%;
     --radius: 0.75rem;
 
-    --sidebar-background: 30 20% 95%;
-    --sidebar-foreground: 30 10% 10%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 10% 12%;
     --sidebar-primary: 24 80% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 30 14% 90%;
-    --sidebar-accent-foreground: 30 10% 10%;
-    --sidebar-border: 30 12% 86%;
+    --sidebar-accent: 220 8% 95%;
+    --sidebar-accent-foreground: 220 10% 12%;
+    --sidebar-border: 220 8% 92%;
     --sidebar-ring: 24 80% 50%;
 
-    --surface: 30 14% 92%;
-    --surface-hover: 30 14% 88%;
+    --surface: 220 8% 96%;
+    --surface-hover: 220 8% 92%;
     --glow-primary: 24 80% 50%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
@@ -307,46 +307,46 @@ html, body {
     --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.35), 0 0 0 1px rgb(255 255 255 / 0.03);
   }
 
-  .sunset {
-    --background: 15 25% 92%;
-    --foreground: 15 15% 12%;
-    --card: 15 30% 96%;
-    --card-foreground: 15 15% 12%;
-    --popover: 15 30% 96%;
-    --popover-foreground: 15 15% 12%;
-    --primary: 10 75% 55%;
+  .desert {
+    --background: 35 30% 12%;
+    --foreground: 35 20% 88%;
+    --card: 35 25% 16%;
+    --card-foreground: 35 20% 88%;
+    --popover: 35 25% 16%;
+    --popover-foreground: 35 20% 88%;
+    --primary: 30 85% 55%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 15 18% 88%;
-    --secondary-foreground: 15 10% 40%;
-    --muted: 15 18% 88%;
-    --muted-foreground: 15 8% 50%;
-    --accent: 15 18% 90%;
-    --accent-foreground: 15 15% 12%;
-    --destructive: 0 68% 56%;
+    --secondary: 35 20% 22%;
+    --secondary-foreground: 35 12% 65%;
+    --muted: 35 20% 22%;
+    --muted-foreground: 35 10% 50%;
+    --accent: 35 20% 22%;
+    --accent-foreground: 35 20% 88%;
+    --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
-    --border: 15 14% 86%;
-    --input: 15 14% 86%;
-    --ring: 10 75% 55%;
+    --border: 35 15% 22%;
+    --input: 35 15% 22%;
+    --ring: 30 85% 55%;
 
-    --sidebar-background: 15 30% 96%;
-    --sidebar-foreground: 15 15% 12%;
-    --sidebar-primary: 10 75% 55%;
+    --sidebar-background: 35 25% 16%;
+    --sidebar-foreground: 35 20% 88%;
+    --sidebar-primary: 30 85% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 15 18% 92%;
-    --sidebar-accent-foreground: 15 15% 12%;
-    --sidebar-border: 15 14% 88%;
-    --sidebar-ring: 10 75% 55%;
+    --sidebar-accent: 35 20% 20%;
+    --sidebar-accent-foreground: 35 20% 88%;
+    --sidebar-border: 35 15% 22%;
+    --sidebar-ring: 30 85% 55%;
 
-    --surface: 15 18% 93%;
-    --surface-hover: 15 18% 89%;
+    --surface: 35 22% 18%;
+    --surface-hover: 35 20% 24%;
     --warning: 38 92% 50%;
     --success: 152 60% 42%;
     --info: 210 100% 56%;
 
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.04), 0 1px 3px 0 rgb(0 0 0 / 0.06);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.06), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-    --shadow-lg: 0 10px 25px -3px rgb(0 0 0 / 0.08), 0 4px 10px -4px rgb(0 0 0 / 0.05);
-    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 0 0 1px rgb(0 0 0 / 0.03);
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.35);
+    --shadow-lg: 0 10px 25px -3px rgb(0 0 0 / 0.45);
+    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.35), 0 0 0 1px rgb(255 255 255 / 0.03);
   }
 }
 

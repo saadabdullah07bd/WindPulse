@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
 
-export type ThemeName = "light" | "dark" | "midnight" | "ocean" | "rose" | "monochrome" | "forest" | "sunset";
+export type ThemeName = "light" | "dark" | "midnight" | "ocean" | "rose" | "monochrome" | "forest" | "desert";
 
 export const THEMES: { id: ThemeName; label: string; preview: string }[] = [
-  { id: "light", label: "Light", preview: "bg-[hsl(30,15%,90%)]" },
+  { id: "light", label: "Light", preview: "bg-[hsl(0,0%,98%)]" },
   { id: "dark", label: "Dark", preview: "bg-[hsl(25,12%,8%)]" },
   { id: "midnight", label: "Midnight", preview: "bg-[hsl(230,25%,10%)]" },
   { id: "ocean", label: "Ocean", preview: "bg-[hsl(200,30%,12%)]" },
   { id: "rose", label: "Rosé", preview: "bg-[hsl(340,20%,92%)]" },
   { id: "monochrome", label: "Mono", preview: "bg-[hsl(0,0%,7%)]" },
   { id: "forest", label: "Forest", preview: "bg-[hsl(150,20%,10%)]" },
-  { id: "sunset", label: "Sunset", preview: "bg-[hsl(15,25%,92%)]" },
+  { id: "desert", label: "Desert", preview: "bg-[hsl(35,30%,12%)]" },
 ];
 
 const ALL_THEME_CLASSES = THEMES.map(t => t.id).filter(id => id !== "light");
@@ -29,7 +29,7 @@ export function useTheme() {
     localStorage.setItem("windpulse-theme", theme);
   }, [theme]);
 
-  const dark = theme !== "light" && theme !== "rose" && theme !== "sunset";
+  const dark = theme !== "light" && theme !== "rose";
 
   return {
     theme,
