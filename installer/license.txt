@@ -1,0 +1,42 @@
+WindPulse - End User License Agreement (EULA)
+
+Copyright (c) 2025 Muhammad Saad Abdullah. All rights reserved.
+
+By installing or using WindPulse, you agree to the following terms:
+
+1. LICENSE GRANT
+   You are granted a free, non-exclusive, non-transferable license to use
+   WindPulse for personal and commercial purposes.
+
+2. RESTRICTIONS
+   You may not:
+   - Reverse engineer, decompile, or disassemble the software.
+   - Redistribute, sell, or sublicense the software without written permission.
+   - Remove or alter any proprietary notices or labels.
+
+3. THIRD-PARTY SOFTWARE
+   WindPulse relies on scrcpy and ADB (Android Debug Bridge), which are
+   distributed under their respective open-source licenses (Apache 2.0).
+   These tools are bundled for convenience and remain property of their
+   respective authors.
+
+4. DISCLAIMER OF WARRANTY
+   THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED. THE AUTHOR SHALL NOT BE LIABLE FOR ANY DAMAGES ARISING FROM
+   THE USE OF THIS SOFTWARE.
+
+5. LIMITATION OF LIABILITY
+   In no event shall the author be liable for any indirect, incidental,
+   special, or consequential damages.
+
+6. TERMINATION
+   This license is effective until terminated. It will terminate automatically
+   if you fail to comply with any term. Upon termination, you must destroy
+   all copies of the software.
+
+7. CONTACT
+   Developer: Muhammad Saad Abdullah
+   Email: saadabdullah07bd@gmail.com
+
+By clicking "I Agree" or installing WindPulse, you acknowledge that you have
+read and agree to be bound by the terms of this agreement.
