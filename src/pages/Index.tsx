@@ -6,7 +6,7 @@ import {
   Settings, Palette, Check, Plus, ArrowRightLeft, HelpCircle
 } from "lucide-react";
 import HowToUseModal from "@/components/HowToUseModal";
-import windpulseIcon from "@/assets/windpulse-icon.png";
+
 import LoadingScreen from "@/components/LoadingScreen";
 import CustomSelect from "@/components/CustomSelect";
 import StatusBadge from "@/components/StatusBadge";
