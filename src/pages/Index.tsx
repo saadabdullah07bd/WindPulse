@@ -164,7 +164,6 @@ const Index = () => {
       {/* Title + status */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <img src={windpulseIcon} alt="WindPulse" width={20} height={20} />
           <h1 className="text-base font-bold text-foreground tracking-tight">WindPulse</h1>
           <StatusBadge status={wp.status} count={wp.sessions.length} />
         </div>
