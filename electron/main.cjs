@@ -140,11 +140,6 @@ ipcMain.handle("adb:pair", async (_e, address, code) => {
 ipcMain.handle("scrcpy:start", (_e, args) => {
   try {
     const id = nextId++;
-    // Replace relative icon.png with absolute path
-    const iconIdx = args.indexOf("--window-icon");
-    if (iconIdx !== -1 && iconIdx + 1 < args.length) {
-      args[iconIdx + 1] = APP_ICON;
-    }
     const proc = spawn(SCRCPY, args, { cwd: BIN });
     scrcpyProcesses.set(id, proc);
     proc.stdout.on("data", (d) => mainWindow?.webContents.send("scrcpy:stdout", { id, data: d.toString() }));
