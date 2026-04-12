@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "electron:dev": "vite build && electron .",
-    "electron:pack": "vite build && npx @electron/packager . WindPulse --platform=win32 --arch=x64 --out=electron-release --overwrite --ignore=node_modules --ignore=^/src --ignore=^/public --ignore=^/electron-release --extra-resource=bin",
+    "electron:pack": "vite build && npx @electron/packager . WindPulse --platform=win32 --arch=x64 --out=electron-release --overwrite --icon=public/icon.ico --ignore=node_modules --ignore=^/src --ignore=^/public --ignore=^/electron-release --extra-resource=bin",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
