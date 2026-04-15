@@ -107,11 +107,14 @@ cd WindPulse
 # Install dependencies
 npm install
 
+# Install dependencies
+npm dsadsada
+
 # Run in development mode
-npm run dev
+npm run electron:dev
 
 # Build the installer
-npm run build
+npm run electron:pack
 ```
 
 ---
