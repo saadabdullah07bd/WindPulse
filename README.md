@@ -107,8 +107,8 @@ cd WindPulse
 # Install dependencies
 npm install
 
-# Install dependencies
-npm dsadsada
+# Install electron dependencies 
+npm install --save-dev electron @electron/packager
 
 # Run in development mode
 npm run electron:dev
