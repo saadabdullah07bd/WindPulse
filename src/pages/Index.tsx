@@ -3,10 +3,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Play, Square, Monitor, Camera, Tablet,
   Volume2, Smartphone, Wifi, Menu, X, Trash2,
-  Settings, Palette, Check, Plus, ArrowRightLeft, HelpCircle
+  Settings, Palette, Check, Plus, ArrowRightLeft, HelpCircle, Keyboard
 } from "lucide-react";
 import HowToUseModal from "@/components/HowToUseModal";
-
 import LoadingScreen from "@/components/LoadingScreen";
 import CustomSelect from "@/components/CustomSelect";
 import StatusBadge from "@/components/StatusBadge";
@@ -14,7 +13,7 @@ import SettingsCard from "@/components/SettingsCard";
 import ConsoleLog from "@/components/ConsoleLog";
 import ShortcutsModal from "@/components/ShortcutsModal";
 import { useWindPulse } from "@/hooks/useWindPulse";
-import { useTheme, THEMES, type ThemeName } from "@/hooks/useTheme";
+import { useTheme, THEMES } from "@/hooks/useTheme";
 import { getSavedDevices, removeSavedDevice, type SavedDevice } from "@/lib/savedDevices";
 
 /* ─── Minimal Toggle ─── */
@@ -63,11 +62,10 @@ const Index = () => {
   const [pairingCode, setPairingCode] = useState("");
   const [pairingAddress, setPairingAddress] = useState("");
 
-  // Settings state
+  // Mode & configuration state
   const [audioOnly, setAudioOnly] = useState(false);
   const [enableMirror, setEnableMirror] = useState(true);
   const [disableAudio, setDisableAudio] = useState(false);
-  const [recordSession, setRecordSession] = useState(false);
   const [encoder, setEncoder] = useState("H.264 (AVC)");
   const [bitrate, setBitrate] = useState(12);
   const [enableCamera, setEnableCamera] = useState(false);
@@ -101,24 +99,55 @@ const Index = () => {
   }, []);
 
   const handleLoadComplete = useCallback(() => {
-    setTimeout(() => setLoading(false), 300);
+    setLoading(false);
   }, []);
 
   const handleStart = useCallback(() => {
     wp.startMirror({
       audioOnly, enableMirror, enableCamera, tabletMode,
       encoder, bitrate, camSource, camRes, camFps, camOrientation,
-      noCamAudio, disableAudio, recordSession, keepAwake, screenOff,
+      noCamAudio, disableAudio, keepAwake, screenOff,
       hidKeyboard, hidMouse, tabletRes, tabletDpi,
     });
-  }, [wp, audioOnly, enableMirror, enableCamera, tabletMode, encoder, bitrate, camSource, camRes, camFps, camOrientation, noCamAudio, disableAudio, recordSession, keepAwake, screenOff, hidKeyboard, hidMouse, tabletRes, tabletDpi]);
+  }, [wp, audioOnly, enableMirror, enableCamera, tabletMode, encoder, bitrate, camSource, camRes, camFps, camOrientation, noCamAudio, disableAudio, keepAwake, screenOff, hidKeyboard, hidMouse, tabletRes, tabletDpi]);
 
-  const handleModeSwitch = useCallback((mode: string) => {
-    if (mode === "audioOnly") { setAudioOnly(true); setEnableMirror(false); setEnableCamera(false); setTabletMode(false); }
-    else if (mode === "mirror") { setEnableMirror(true); setAudioOnly(false); setEnableCamera(false); setTabletMode(false); }
-    else if (mode === "camera") { setEnableCamera(true); setEnableMirror(false); setAudioOnly(false); setTabletMode(false); }
-    else if (mode === "tablet") { setTabletMode(true); setEnableMirror(false); setEnableCamera(false); setAudioOnly(false); }
+  const handleModeSwitch = useCallback((mode: "mirror" | "audioOnly" | "camera" | "tablet" | "none") => {
+    setEnableMirror(mode === "mirror");
+    setAudioOnly(mode === "audioOnly");
+    setEnableCamera(mode === "camera");
+    setTabletMode(mode === "tablet");
   }, []);
+
+  // Keyboard shortcuts listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Toggle shortcuts modal: Ctrl + / or Cmd + /
+      if ((e.ctrlKey || e.metaKey) && e.key === "/") {
+        e.preventDefault();
+        setShortcutsOpen((prev) => !prev);
+      }
+      // Start mirror: Ctrl + Shift + S
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "S" || e.key === "s")) {
+        e.preventDefault();
+        if (wp.sessions.length === 0) {
+          handleStart();
+        }
+      }
+      // Stop all sessions: Ctrl + Shift + X
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "X" || e.key === "x")) {
+        e.preventDefault();
+        wp.stopAll();
+      }
+      // Refresh devices: Ctrl + Shift + R
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "R" || e.key === "r")) {
+        e.preventDefault();
+        wp.refreshDevices();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleStart, wp]);
 
   const handlePair = useCallback(async () => {
     if (!pairingAddress || !pairingCode) {
@@ -164,17 +193,25 @@ const Index = () => {
       {/* Title + status */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          
           <h1 className="text-base font-bold text-foreground tracking-tight">WindPulse</h1>
           <StatusBadge status={wp.status} count={wp.sessions.length} />
         </div>
-        <button
-          onClick={() => setHowToUseOpen(true)}
-          className="p-1 rounded-md hover:bg-secondary transition-colors text-muted-foreground hover:text-primary"
-          title="How to use"
-        >
-          <HelpCircle size={15} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setShortcutsOpen(true)}
+            className="p-1 rounded-md hover:bg-secondary transition-colors text-muted-foreground hover:text-primary"
+            title="Keyboard Shortcuts (Ctrl + /)"
+          >
+            <Keyboard size={15} />
+          </button>
+          <button
+            onClick={() => setHowToUseOpen(true)}
+            className="p-1 rounded-md hover:bg-secondary transition-colors text-muted-foreground hover:text-primary"
+            title="How to use"
+          >
+            <HelpCircle size={15} />
+          </button>
+        </div>
       </div>
 
       {/* Tab Switcher */}
@@ -429,6 +466,13 @@ const Index = () => {
         <h1 className="text-sm font-bold text-foreground">WindPulse</h1>
         <div className="flex items-center gap-2">
           <StatusBadge status={wp.status} count={wp.sessions.length} />
+          <button
+            onClick={() => setShortcutsOpen(true)}
+            className="p-1.5 rounded-lg hover:bg-secondary transition-colors"
+            title="Keyboard Shortcuts"
+          >
+            <Keyboard size={15} className="text-muted-foreground" />
+          </button>
           <button onClick={() => setSidebarOpen(true)} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
             <Menu size={16} className="text-muted-foreground" />
           </button>
@@ -482,12 +526,20 @@ const Index = () => {
             </div>
 
             <SettingsCard title="Audio Only" icon={Volume2} delay={0}>
-              <Toggle checked={audioOnly} onChange={() => handleModeSwitch(audioOnly ? "mirror" : "audioOnly")} label="Audio stream only" />
+              <Toggle
+                checked={audioOnly}
+                onChange={(checked) => handleModeSwitch(checked ? "audioOnly" : "mirror")}
+                label="Audio stream only"
+              />
               <p className="text-[10px] text-muted-foreground/60">Disables all visual interaction</p>
             </SettingsCard>
 
             <SettingsCard title="Video" icon={Monitor} delay={0}>
-              <Toggle checked={enableMirror} onChange={() => handleModeSwitch(enableMirror ? "" : "mirror")} label="Screen mirroring" />
+              <Toggle
+                checked={enableMirror}
+                onChange={(checked) => handleModeSwitch(checked ? "mirror" : "none")}
+                label="Screen mirroring"
+              />
               <Toggle checked={disableAudio} onChange={setDisableAudio} label="Mute device audio" />
               <CustomSelect value={encoder} onChange={setEncoder} options={["H.264 (AVC)", "H.265 (HEVC)", "AV1"]} label="Encoder" />
               <div className="space-y-1.5 pt-1">
@@ -503,7 +555,11 @@ const Index = () => {
             </SettingsCard>
 
             <SettingsCard title="Camera" icon={Camera} delay={0}>
-              <Toggle checked={enableCamera} onChange={() => handleModeSwitch(enableCamera ? "mirror" : "camera")} label="Camera mirroring" />
+              <Toggle
+                checked={enableCamera}
+                onChange={(checked) => handleModeSwitch(checked ? "camera" : "mirror")}
+                label="Camera mirroring"
+              />
               <Toggle checked={noCamAudio} onChange={setNoCamAudio} label="Mute camera mic" />
               <div className="grid grid-cols-3 gap-2">
                 <CustomSelect value={camSource} onChange={setCamSource} options={["back", "front", "external"]} label="Source" />
@@ -523,7 +579,11 @@ const Index = () => {
             </SettingsCard>
 
             <SettingsCard title="Tablet Mode" icon={Tablet} delay={0}>
-              <Toggle checked={tabletMode} onChange={() => handleModeSwitch(tabletMode ? "mirror" : "tablet")} label="Virtual display" />
+              <Toggle
+                checked={tabletMode}
+                onChange={(checked) => handleModeSwitch(checked ? "tablet" : "mirror")}
+                label="Virtual display"
+              />
               <div className="grid grid-cols-2 gap-2">
                 <CustomSelect value={tabletRes} onChange={setTabletRes} options={["1920x1080", "2560x1440", "3840x2160"]} label="Resolution" />
                 <CustomSelect value={tabletDpi} onChange={setTabletDpi} options={["140 DPI", "240 DPI", "360 DPI", "480 DPI"]} label="Density" />

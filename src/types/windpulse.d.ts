@@ -10,6 +10,7 @@ export interface DeviceInfo {
   serial: string;
   model: string;
   name: string;
+  state?: "device" | "unauthorized" | "offline";
 }
 
 export interface WindPulseAPI {

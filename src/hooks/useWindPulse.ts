@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { DeviceInfo, ScrcpyEvent } from "@/types/windpulse";
+import type { DeviceInfo } from "@/types/windpulse";
+import { saveDevice } from "@/lib/savedDevices";
 
 export type ConnectionStatus = "initializing" | "ready" | "active" | "disconnected";
 
@@ -25,6 +26,8 @@ export function useWindPulse() {
   const [binariesOk, setBinariesOk] = useState(true);
   const pollRef = useRef<ReturnType<typeof setInterval>>();
   const selectedDeviceRef = useRef(selectedDevice);
+  const deviceNameCacheRef = useRef<Map<string, string>>(new Map());
+  const warnedSerialsRef = useRef<Set<string>>(new Set());
 
   // Keep ref in sync to avoid stale closures in polling
   useEffect(() => {
@@ -42,22 +45,50 @@ export function useWindPulse() {
     const res = await api.adbDevices();
     if (!res.success) return;
 
-    // Fetch friendly names for each device
+    // Process devices and cache friendly names
     const devicesWithNames = await Promise.all(
       res.devices.map(async (d) => {
+        if (d.state === "unauthorized") {
+          if (!warnedSerialsRef.current.has(d.serial)) {
+            warnedSerialsRef.current.add(d.serial);
+            addLog(`Device ${d.serial} is unauthorized. Please accept the USB debugging prompt on your phone.`, "warning");
+          }
+          return { ...d, name: `${d.model || d.serial} (Unauthorized)` };
+        }
+
+        if (d.state === "offline") {
+          return { ...d, name: `${d.model || d.serial} (Offline)` };
+        }
+
+        // Cached friendly name check
+        if (deviceNameCacheRef.current.has(d.serial)) {
+          return { ...d, name: deviceNameCacheRef.current.get(d.serial)! };
+        }
+
         try {
           const nameRes = await api.adbGetDeviceName(d.serial);
-          if (nameRes.success && nameRes.name) return { ...d, name: nameRes.name };
-        } catch { /* use default */ }
-        return d;
+          if (nameRes.success && nameRes.name) {
+            deviceNameCacheRef.current.set(d.serial, nameRes.name);
+            return { ...d, name: nameRes.name };
+          }
+        } catch {
+          /* use default model or serial */
+        }
+
+        const fallback = d.model || d.serial;
+        deviceNameCacheRef.current.set(d.serial, fallback);
+        return { ...d, name: fallback };
       })
     );
 
     setDevices(devicesWithNames);
-    if (devicesWithNames.length > 0 && !devicesWithNames.find(d => d.serial === selectedDeviceRef.current)) {
-      setSelectedDevice(devicesWithNames[0].serial);
+
+    // Auto-select first active device if current selection is invalid
+    const activeDevices = devicesWithNames.filter(d => d.state !== "offline");
+    if (activeDevices.length > 0 && !activeDevices.some(d => d.serial === selectedDeviceRef.current)) {
+      setSelectedDevice(activeDevices[0].serial);
     }
-  }, []);
+  }, [addLog]);
 
   // Boot
   useEffect(() => {
@@ -66,18 +97,24 @@ export function useWindPulse() {
       addLog("Electron IPC not available — using simulated data", "info");
       const timer = setTimeout(() => {
         setStatus("ready");
-        setDevices([{ serial: "demo", model: "Demo Device", name: "Demo Device (preview)" }]);
+        setDevices([{ serial: "demo", model: "Demo Device", name: "Demo Device (preview)", state: "device" }]);
         setSelectedDevice("demo");
         addLog("Demo device loaded", "success");
-      }, 1200);
+      }, 500);
       return () => clearTimeout(timer);
     }
 
     const api = getApi()!;
     (async () => {
       const bins = await api.checkBinaries();
-      if (!bins.scrcpyExists) { addLog("CRITICAL: scrcpy not found in bin/", "error"); setBinariesOk(false); }
-      if (!bins.adbExists) { addLog("CRITICAL: adb not found in bin/", "error"); setBinariesOk(false); }
+      if (!bins.scrcpyExists || !bins.adbExists) {
+        if (!bins.scrcpyExists) addLog("scrcpy not found in bin/ or system PATH", "error");
+        if (!bins.adbExists) addLog("adb not found in bin/ or system PATH", "error");
+        addLog("Tip: Place binaries in the bin/ folder or install them to your system PATH", "warning");
+        setBinariesOk(false);
+      } else {
+        setBinariesOk(true);
+      }
 
       addLog("Starting ADB server...", "info");
       const res = await api.adbStartServer();
@@ -109,14 +146,13 @@ export function useWindPulse() {
   // Update status based on sessions/devices
   useEffect(() => {
     if (sessions.length > 0) setStatus("active");
-    else if (devices.length > 0) setStatus("ready");
+    else if (devices.some(d => d.state !== "offline" && d.state !== "unauthorized")) setStatus("ready");
     else if (status !== "initializing") setStatus("disconnected");
   }, [sessions, devices, status]);
 
   const connectIp = useCallback(async (ip: string) => {
     if (!isElectron()) {
       addLog(`Simulated connect to ${ip}`, "success");
-      const { saveDevice } = await import("@/lib/savedDevices");
       saveDevice(ip);
       return;
     }
@@ -124,9 +160,8 @@ export function useWindPulse() {
     const res = await getApi()!.adbConnect(ip);
     if (res.success) {
       addLog(res.message || "Connected", "success");
-      const { saveDevice } = await import("@/lib/savedDevices");
       saveDevice(ip);
-      setTimeout(refreshDevices, 2000);
+      setTimeout(refreshDevices, 1500);
     } else {
       addLog(`Connection failed: ${res.error}`, "error");
     }
@@ -142,7 +177,7 @@ export function useWindPulse() {
     const res = await getApi()!.adbTcpip(target);
     if (res.success) {
       addLog("TCP/IP mode activated on port 5555. You can now unplug USB and connect via IP.", "success");
-      setTimeout(refreshDevices, 3000);
+      setTimeout(refreshDevices, 2000);
     } else {
       addLog(`Wireless activation failed: ${res.error}`, "error");
     }
@@ -161,7 +196,6 @@ export function useWindPulse() {
     camOrientation?: string;
     noCamAudio?: boolean;
     disableAudio?: boolean;
-    recordSession?: boolean;
     keepAwake?: boolean;
     screenOff?: boolean;
     hidKeyboard?: boolean;
@@ -170,6 +204,12 @@ export function useWindPulse() {
     tabletDpi?: string;
   }) => {
     if (!selectedDevice) { addLog("No device selected", "error"); return; }
+
+    const targetDev = devices.find(d => d.serial === selectedDevice);
+    if (targetDev?.state === "unauthorized") {
+      addLog("Cannot start mirror: device is unauthorized. Confirm USB debugging on phone.", "error");
+      return;
+    }
 
     const args: string[] = ["--serial", selectedDevice];
 
@@ -202,19 +242,11 @@ export function useWindPulse() {
         if (config.disableAudio) args.push("--no-audio");
       }
 
-      if (config.recordSession) {
-        const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-        const file = `record_${ts}.mp4`;
-        args.push("--record", file);
-        addLog(`Recording to ${file}`, "info");
-      }
-
       args.push("--video-bit-rate", `${config.bitrate || 12}M`);
       if (config.keepAwake) args.push("--stay-awake");
       if (config.screenOff) args.push("--turn-screen-off");
 
-      const device = devices.find(d => d.serial === selectedDevice);
-      const displayName = device?.name || device?.model || selectedDevice;
+      const displayName = targetDev?.name || targetDev?.model || selectedDevice;
       args.push("--window-title", displayName);
     }
 

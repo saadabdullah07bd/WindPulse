@@ -16,11 +16,27 @@ contextBridge.exposeInMainWorld("windpulse", {
   scrcpyStopAll: () => ipcRenderer.invoke("scrcpy:stop-all"),
   scrcpyActiveCount: () => ipcRenderer.invoke("scrcpy:active-count"),
 
-  // scrcpy events
-  onScrcpyStdout: (cb) => { ipcRenderer.on("scrcpy:stdout", (_e, d) => cb(d)); return () => ipcRenderer.removeAllListeners("scrcpy:stdout"); },
-  onScrcpyStderr: (cb) => { ipcRenderer.on("scrcpy:stderr", (_e, d) => cb(d)); return () => ipcRenderer.removeAllListeners("scrcpy:stderr"); },
-  onScrcpyClosed: (cb) => { ipcRenderer.on("scrcpy:closed", (_e, d) => cb(d)); return () => ipcRenderer.removeAllListeners("scrcpy:closed"); },
-  onScrcpyError: (cb) => { ipcRenderer.on("scrcpy:error", (_e, d) => cb(d)); return () => ipcRenderer.removeAllListeners("scrcpy:error"); },
+  // scrcpy events (clean per-subscriber cleanup)
+  onScrcpyStdout: (cb) => {
+    const handler = (_e, d) => cb(d);
+    ipcRenderer.on("scrcpy:stdout", handler);
+    return () => ipcRenderer.removeListener("scrcpy:stdout", handler);
+  },
+  onScrcpyStderr: (cb) => {
+    const handler = (_e, d) => cb(d);
+    ipcRenderer.on("scrcpy:stderr", handler);
+    return () => ipcRenderer.removeListener("scrcpy:stderr", handler);
+  },
+  onScrcpyClosed: (cb) => {
+    const handler = (_e, d) => cb(d);
+    ipcRenderer.on("scrcpy:closed", handler);
+    return () => ipcRenderer.removeListener("scrcpy:closed", handler);
+  },
+  onScrcpyError: (cb) => {
+    const handler = (_e, d) => cb(d);
+    ipcRenderer.on("scrcpy:error", handler);
+    return () => ipcRenderer.removeListener("scrcpy:error", handler);
+  },
 
   // Binaries
   checkBinaries: () => ipcRenderer.invoke("check-binaries"),

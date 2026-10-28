@@ -38,8 +38,8 @@
     <td>Mirror and manage multiple Android devices simultaneously</td>
   </tr>
   <tr>
-    <td>🎮 <strong>3 Display Modes</strong></td>
-    <td><strong>Mirror</strong> (view + control), <strong>Stream</strong> (view only), <strong>Record</strong> (capture to file)</td>
+    <td>🎮 <strong>Flexible Display Modes</strong></td>
+    <td><strong>Mirror</strong> (view + control), <strong>Camera Passthrough</strong>, <strong>Audio Only</strong>, and <strong>Virtual Tablet Display</strong></td>
   </tr>
   <tr>
     <td>⚡ <strong>Low Latency</strong></td>
@@ -104,11 +104,10 @@
 git clone https://github.com/saadabdullah07bd/WindPulse.git
 cd WindPulse
 
-# Install dependencies
+# Install dependencies (includes Electron & packager)
 npm install
 
-# Install electron dependencies 
-npm install --save-dev electron @electron/packager
+# Place adb.exe and scrcpy.exe in a bin/ folder, or ensure they are in your system PATH
 
 # Run in development mode
 npm run electron:dev

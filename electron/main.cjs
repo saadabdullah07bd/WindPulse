@@ -1,12 +1,46 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
-const { spawn, execFile } = require("child_process");
+const { spawn, execFile, execSync } = require("child_process");
 const fs = require("fs");
 
-const BIN = path.join(app.isPackaged ? process.resourcesPath : __dirname, "..", "bin");
-const ADB = path.join(BIN, process.platform === "win32" ? "adb.exe" : "adb");
-const SCRCPY = path.join(BIN, process.platform === "win32" ? "scrcpy.exe" : "scrcpy");
+// Resolve local bin directory (supports dev mode and packaged resources)
+const localBin = app.isPackaged
+  ? path.join(process.resourcesPath, "bin")
+  : path.join(__dirname, "..", "bin");
 
+/**
+ * Locate executable: checks bundled bin/ first, then falls back to system PATH.
+ */
+function findBinary(name) {
+  const exeName = process.platform === "win32" ? `${name}.exe` : name;
+  const bundledPath = path.join(localBin, exeName);
+
+  if (fs.existsSync(bundledPath)) {
+    return { path: bundledPath, cwd: localBin };
+  }
+
+  // System PATH fallback
+  try {
+    const cmd = process.platform === "win32" ? `where.exe ${exeName}` : `which ${name}`;
+    const output = execSync(cmd, { encoding: "utf8", windowsHide: true }).trim();
+    const firstMatch = output.split(/\r?\n/)[0]?.trim();
+    if (firstMatch && fs.existsSync(firstMatch)) {
+      return { path: firstMatch, cwd: path.dirname(firstMatch) };
+    }
+  } catch (e) {
+    // Binary not in PATH
+  }
+
+  return { path: bundledPath, cwd: localBin };
+}
+
+function getAdb() {
+  return findBinary("adb");
+}
+
+function getScrcpy() {
+  return findBinary("scrcpy");
+}
 
 let mainWindow;
 const scrcpyProcesses = new Map();
@@ -36,8 +70,23 @@ function createWindow() {
   }
 }
 
+function killAllScrcpy() {
+  for (const [id, proc] of scrcpyProcesses) {
+    try {
+      proc.kill();
+    } catch (e) {
+      // Ignore cleanup error
+    }
+  }
+  scrcpyProcesses.clear();
+}
+
 app.whenReady().then(createWindow);
-app.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });
+app.on("before-quit", killAllScrcpy);
+app.on("window-all-closed", () => {
+  killAllScrcpy();
+  if (process.platform !== "darwin") app.quit();
+});
 
 // ─── Window controls ───
 ipcMain.handle("window:minimize", () => mainWindow?.minimize());
@@ -49,17 +98,22 @@ ipcMain.handle("window:close", () => mainWindow?.close());
 ipcMain.handle("window:pin", (_e, pin) => mainWindow?.setAlwaysOnTop(pin));
 
 // ─── Binary check ───
-ipcMain.handle("check-binaries", () => ({
-  scrcpyExists: fs.existsSync(SCRCPY),
-  adbExists: fs.existsSync(ADB),
-}));
+ipcMain.handle("check-binaries", () => {
+  const scrcpy = getScrcpy();
+  const adb = getAdb();
+  return {
+    scrcpyExists: fs.existsSync(scrcpy.path),
+    adbExists: fs.existsSync(adb.path),
+  };
+});
 
 // ─── ADB helpers ───
 function runAdb(args) {
   return new Promise((resolve) => {
-    execFile(ADB, args, { timeout: 15000 }, (err, stdout, stderr) => {
+    const adb = getAdb();
+    execFile(adb.path, args, { timeout: 15000, windowsHide: true }, (err, stdout, stderr) => {
       if (err) resolve({ success: false, error: err.message });
-      else resolve({ success: true, stdout: stdout.trim(), stderr: stderr.trim() });
+      else resolve({ success: true, stdout: (stdout || "").trim(), stderr: (stderr || "").trim() });
     });
   });
 }
@@ -71,13 +125,16 @@ ipcMain.handle("adb:devices", async () => {
   if (!res.success) return res;
   const devices = [];
   for (const line of res.stdout.split("\n").slice(1)) {
-    const match = line.match(/^(\S+)\s+device\s+(.*)/);
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    const match = trimmed.match(/^(\S+)\s+(device|unauthorized|offline)\s*(.*)/);
     if (match) {
       const serial = match[1];
-      const info = match[2];
+      const state = match[2];
+      const info = match[3] || "";
       const model = (info.match(/model:(\S+)/) || [])[1] || serial;
       const name = (info.match(/device:(\S+)/) || [])[1] || model;
-      devices.push({ serial, model, name });
+      devices.push({ serial, state, model, name });
     }
   }
   return { success: true, devices };
@@ -108,30 +165,56 @@ ipcMain.handle("adb:tcpip", (_e, serial) => runAdb(["-s", serial, "tcpip", "5555
 ipcMain.handle("adb:disconnect", (_e, serial) => runAdb(["disconnect", serial]));
 
 ipcMain.handle("adb:pair", async (_e, address, code) => {
-  // Try passing code as argument first (more reliable)
+  // Try passing code as argument first (supported in newer ADB versions)
   const res = await runAdb(["pair", address, code]);
   if (res.success && res.stdout && res.stdout.toLowerCase().includes("successfully")) {
     return { success: true, message: res.stdout.trim() };
   }
+
   // Fallback: use stdin-based pairing
   return new Promise((resolve) => {
-    const proc = spawn(ADB, ["pair", address], { timeout: 30000 });
+    const adb = getAdb();
+    const proc = spawn(adb.path, ["pair", address], { windowsHide: true });
     let output = "";
+    let finished = false;
+
+    const timer = setTimeout(() => {
+      if (!finished) {
+        finished = true;
+        try { proc.kill(); } catch (e) {}
+        resolve({ success: false, error: "Pairing timed out" });
+      }
+    }, 25000);
+
     proc.stdout.on("data", (d) => { output += d.toString(); });
     proc.stderr.on("data", (d) => { output += d.toString(); });
-    // Wait briefly for the prompt, then write the code
+
+    // Wait briefly for prompt, then write code
     setTimeout(() => {
-      try { proc.stdin.write(code + "\n"); } catch (e) {}
+      try {
+        proc.stdin.write(code + "\n");
+        proc.stdin.end();
+      } catch (e) {}
     }, 500);
+
     proc.on("close", (exitCode) => {
-      if (exitCode === 0 && output.toLowerCase().includes("successfully")) {
-        resolve({ success: true, message: output.trim() });
-      } else {
-        resolve({ success: false, error: output.trim() || "Pairing failed" });
+      if (!finished) {
+        finished = true;
+        clearTimeout(timer);
+        if (exitCode === 0 && output.toLowerCase().includes("successfully")) {
+          resolve({ success: true, message: output.trim() });
+        } else {
+          resolve({ success: false, error: output.trim() || "Pairing failed" });
+        }
       }
     });
+
     proc.on("error", (err) => {
-      resolve({ success: false, error: err.message });
+      if (!finished) {
+        finished = true;
+        clearTimeout(timer);
+        resolve({ success: false, error: err.message });
+      }
     });
   });
 });
@@ -139,13 +222,20 @@ ipcMain.handle("adb:pair", async (_e, address, code) => {
 // ─── scrcpy ───
 ipcMain.handle("scrcpy:start", (_e, args) => {
   try {
+    const scrcpy = getScrcpy();
     const id = nextId++;
-    const proc = spawn(SCRCPY, args, { cwd: BIN });
+    const proc = spawn(scrcpy.path, args, { cwd: scrcpy.cwd, windowsHide: false });
     scrcpyProcesses.set(id, proc);
     proc.stdout.on("data", (d) => mainWindow?.webContents.send("scrcpy:stdout", { id, data: d.toString() }));
     proc.stderr.on("data", (d) => mainWindow?.webContents.send("scrcpy:stderr", { id, data: d.toString() }));
-    proc.on("close", (code) => { scrcpyProcesses.delete(id); mainWindow?.webContents.send("scrcpy:closed", { id, code }); });
-    proc.on("error", (err) => { scrcpyProcesses.delete(id); mainWindow?.webContents.send("scrcpy:error", { id, error: err.message }); });
+    proc.on("close", (code) => {
+      scrcpyProcesses.delete(id);
+      mainWindow?.webContents.send("scrcpy:closed", { id, code });
+    });
+    proc.on("error", (err) => {
+      scrcpyProcesses.delete(id);
+      mainWindow?.webContents.send("scrcpy:error", { id, error: err.message });
+    });
     return { success: true, id };
   } catch (e) {
     return { success: false, error: e.message };
@@ -154,12 +244,15 @@ ipcMain.handle("scrcpy:start", (_e, args) => {
 
 ipcMain.handle("scrcpy:stop", (_e, id) => {
   const proc = scrcpyProcesses.get(id);
-  if (proc) { proc.kill(); scrcpyProcesses.delete(id); }
+  if (proc) {
+    try { proc.kill(); } catch (e) {}
+    scrcpyProcesses.delete(id);
+  }
   return { success: true };
 });
 
 ipcMain.handle("scrcpy:stop-all", () => {
-  for (const [id, proc] of scrcpyProcesses) { proc.kill(); scrcpyProcesses.delete(id); }
+  killAllScrcpy();
   return { success: true };
 });
 

@@ -83,7 +83,7 @@ const steps = [
     items: [
       "Keep Awake — prevents the phone from sleeping during mirror",
       "Screen Off — turns off the phone screen while mirroring",
-      "Record Session — saves mirroring to an MP4 file",
+      "HID Keyboard / Mouse — control Android directly with physical PC peripherals",
     ],
   },
   {
