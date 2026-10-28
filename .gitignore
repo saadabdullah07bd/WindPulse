@@ -13,6 +13,7 @@ dist-ssr
 *.local
 electron-release
 bin/
+output-release/
 
 # Editor directories and files
 .vscode/*
