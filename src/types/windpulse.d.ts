@@ -19,6 +19,30 @@ export interface MdnsService {
   address: string;
 }
 
+export interface UpdateInfo {
+  available: boolean;
+  current_version: string;
+  latest_version: string;
+  release_notes?: string;
+  download_url?: string;
+  file_name?: string;
+  file_size?: number;
+}
+
+export interface DownloadProgress {
+  downloaded_bytes: number;
+  total_bytes: number;
+  percentage: number;
+}
+
+export interface UpdaterStatus {
+  current_version: string;
+  is_downloading: boolean;
+  is_ready: boolean;
+  latest_version?: string;
+  download_percent: number;
+}
+
 export interface WindPulseAPI {
   adbStartServer: () => Promise<{ success: boolean; error?: string }>;
   adbDevices: () => Promise<{ success: boolean; devices: DeviceInfo[]; error?: string }>;
@@ -40,6 +64,15 @@ export interface WindPulseAPI {
   onScrcpyError: (cb: (data: ScrcpyEvent) => void) => () => void;
 
   checkBinaries: () => Promise<{ scrcpyExists: boolean; adbExists: boolean }>;
+
+  updaterCheck?: () => Promise<UpdateInfo>;
+  updaterStatus?: () => Promise<UpdaterStatus>;
+  updaterDownload?: (downloadUrl: string, fileName: string) => Promise<string>;
+  updaterApplyAndRestart?: () => Promise<void>;
+
+  onUpdaterAvailable?: (cb: (info: UpdateInfo) => void) => () => void;
+  onUpdaterProgress?: (cb: (progress: DownloadProgress) => void) => () => void;
+  onUpdaterReady?: (cb: (data: { version?: string; installer_path?: string }) => void) => () => void;
 
   windowMinimize: () => Promise<void>;
   windowMaximize: () => Promise<void>;

@@ -3,7 +3,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Play, Square, Monitor, Camera, Tablet,
   Volume2, Smartphone, Wifi, Menu, X, Trash2,
-  Settings, Palette, Check, Plus, ArrowRightLeft, HelpCircle, Keyboard, QrCode
+  Settings, Palette, Check, Plus, ArrowRightLeft, HelpCircle, Keyboard, QrCode,
+  Loader2, RefreshCw, ArrowUpCircle
 } from "lucide-react";
 import HowToUseModal from "@/components/HowToUseModal";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -14,6 +15,7 @@ import ConsoleLog from "@/components/ConsoleLog";
 import ShortcutsModal from "@/components/ShortcutsModal";
 import QRCodeModal from "@/components/QRCodeModal";
 import { useWindPulse } from "@/hooks/useWindPulse";
+import { useAutoUpdater } from "@/hooks/useAutoUpdater";
 import { useTheme, THEMES } from "@/hooks/useTheme";
 import { getSavedDevices, removeSavedDevice, type SavedDevice } from "@/lib/savedDevices";
 
@@ -58,7 +60,18 @@ const Index = () => {
   const prevTab = useRef<ActiveTab>("mirror");
   const [pairingOpen, setPairingOpen] = useState(false);
   const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [updateBannerDismissed, setUpdateBannerDismissed] = useState(false);
   const themeCtx = useTheme();
+
+  const {
+    updateInfo,
+    isDownloading,
+    isReady,
+    progress: updateProgress,
+    isChecking: isCheckingUpdates,
+    checkForUpdates,
+    applyUpdateAndRestart,
+  } = useAutoUpdater();
 
   // Wireless debugging pairing
   const [pairingCode, setPairingCode] = useState("");
@@ -446,6 +459,90 @@ const Index = () => {
                 </div>
               </div>
 
+              {/* Updates Section */}
+              <div className="space-y-2 pt-2 border-t border-border">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <RefreshCw size={12} className="text-primary" />
+                    <span className="text-[11px] font-semibold text-foreground">Updates</span>
+                  </div>
+                  {isReady ? (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 font-semibold border border-emerald-500/30">
+                      Ready to install
+                    </span>
+                  ) : isDownloading ? (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                      Downloading {updateProgress?.percentage ? `${updateProgress.percentage}%` : "..."}
+                    </span>
+                  ) : (
+                    <span className="text-[9px] text-muted-foreground">Automatic</span>
+                  )}
+                </div>
+
+                {isReady ? (
+                  <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 space-y-2">
+                    <div className="flex items-start gap-2">
+                      <Check size={14} className="text-emerald-500 shrink-0 mt-0.5" />
+                      <div className="space-y-0.5">
+                        <p className="text-[11px] font-semibold text-foreground">
+                          {updateInfo?.latest_version ? `${updateInfo.latest_version} ` : ""}Update Downloaded!
+                        </p>
+                        <p className="text-[10px] text-muted-foreground leading-relaxed">
+                          Restarting will silently install the update and reopen WindPulse automatically.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => applyUpdateAndRestart()}
+                      className="w-full py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold flex items-center justify-center gap-1.5 shadow-sm transition-colors"
+                    >
+                      <RefreshCw size={12} /> Restart & Install Update
+                    </button>
+                  </div>
+                ) : isDownloading ? (
+                  <div className="p-2 rounded-lg bg-secondary/50 border border-border space-y-1.5">
+                    <div className="flex justify-between items-center text-[10px]">
+                      <span className="text-muted-foreground">Downloading update in background...</span>
+                      <span className="font-semibold text-primary tabular-nums">
+                        {updateProgress?.percentage || 0}%
+                      </span>
+                    </div>
+                    <div className="w-full h-1 bg-border rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary transition-all duration-300"
+                        style={{ width: `${updateProgress?.percentage || 0}%` }}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-secondary/30 border border-border">
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] font-medium text-foreground">
+                        {updateInfo && !updateInfo.available ? "You're on the latest version" : "Auto-update enabled"}
+                      </p>
+                      <p className="text-[9px] text-muted-foreground">
+                        Updates download automatically in the background
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={isCheckingUpdates}
+                      onClick={() => checkForUpdates()}
+                      className="px-2.5 py-1 rounded bg-secondary hover:bg-secondary/80 text-foreground text-[10px] font-medium transition-colors flex items-center gap-1 border border-border disabled:opacity-50"
+                    >
+                      {isCheckingUpdates ? (
+                        <>
+                          <Loader2 size={10} className="animate-spin" /> Checking...
+                        </>
+                      ) : (
+                        "Check Now"
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {/* About */}
               <div className="space-y-1.5 pt-2 border-t border-border">
                 <div className="flex items-center justify-between">
@@ -614,6 +711,54 @@ const Index = () => {
           </motion.div>
         </main>
       </div>
+
+      {/* Floating Update Ready Banner */}
+      <AnimatePresence>
+        {isReady && !updateBannerDismissed && (
+          <motion.div
+            initial={{ opacity: 0, y: 40, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-4 right-4 z-50 max-w-sm p-3 rounded-xl bg-card border border-emerald-500/30 shadow-xl shadow-emerald-500/5 flex items-start gap-2.5"
+          >
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
+              <RefreshCw size={14} className="animate-spin" style={{ animationDuration: "3s" }} />
+            </div>
+            <div className="flex-1 min-w-0 pr-1">
+              <p className="text-[11px] font-semibold text-foreground">
+                Update Ready to Install
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">
+                {updateInfo?.latest_version ? `${updateInfo.latest_version} ` : "A new version "}
+                has been downloaded in the background.
+              </p>
+              <div className="flex items-center gap-2 mt-2">
+                <button
+                  type="button"
+                  onClick={() => applyUpdateAndRestart()}
+                  className="px-2.5 py-1 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-semibold flex items-center gap-1 shadow-sm transition-colors"
+                >
+                  <RefreshCw size={10} /> Restart Now
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUpdateBannerDismissed(true)}
+                  className="px-2 py-1 rounded-md text-muted-foreground hover:text-foreground text-[10px] transition-colors"
+                >
+                  Later
+                </button>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setUpdateBannerDismissed(true)}
+              className="text-muted-foreground hover:text-foreground p-0.5 rounded transition-colors"
+            >
+              <X size={12} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };

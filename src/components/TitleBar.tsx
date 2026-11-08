@@ -1,7 +1,9 @@
-import { Minus, Square, X } from "lucide-react";
+import { ArrowUpCircle, Loader2, Minus, RefreshCw, Square, X } from "lucide-react";
+import { useAutoUpdater } from "@/hooks/useAutoUpdater";
 
 const TitleBar = () => {
   const isElectron = !!window.windpulse;
+  const { isDownloading, isReady, progress, updateInfo, applyUpdateAndRestart } = useAutoUpdater();
 
   if (!isElectron) return null;
 
@@ -35,6 +37,34 @@ const TitleBar = () => {
         >
           WindPulse
         </span>
+
+        {/* Update status badge in title bar */}
+        {isReady ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              applyUpdateAndRestart();
+            }}
+            style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+            className="pointer-events-auto ml-2 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 text-[10px] font-semibold transition-all hover:scale-105"
+            title="Update is ready! Click to restart and install"
+          >
+            <RefreshCw size={10} className="animate-spin" style={{ animationDuration: "3s" }} />
+            <span>Restart to Update</span>
+          </button>
+        ) : isDownloading ? (
+          <div
+            style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+            className="pointer-events-auto ml-2 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-[10px] font-medium"
+            title="Downloading update in background..."
+          >
+            <Loader2 size={10} className="animate-spin" />
+            <span>
+              Updating {progress?.percentage ? `${progress.percentage}%` : "..."}
+            </span>
+          </div>
+        ) : null}
       </div>
       <div
         className="flex items-center h-full"

@@ -1,5 +1,5 @@
 #define MyAppName "WindPulse"
-#define MyAppVersion "2.0.0"
+#define MyAppVersion "2.1.0"
 #define MyAppPublisher "Muhammad Saad Abdullah"
 #define MyAppURL "https://github.com/saadabdullah07bd/WindPulse"
 #define MyAppExeName "WindPulse.exe"
@@ -14,6 +14,7 @@ AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 DisableProgramGroupPage=yes
+CloseApplications=yes
 LicenseFile=MIT License
 OutputDir=output-release
 OutputBaseFilename=WindPulseV2.0.Setupx64

@@ -1,4 +1,4 @@
-import type { ScrcpyEvent, WindPulseAPI } from "@/types/windpulse";
+import type { DownloadProgress, ScrcpyEvent, UpdateInfo, UpdaterStatus, WindPulseAPI } from "@/types/windpulse";
 
 declare global {
   interface Window {
@@ -105,6 +105,57 @@ export function initTauriBridge(): boolean {
     },
 
     checkBinaries: () => tauri.invoke("check_binaries"),
+
+    updaterCheck: () => tauri.invoke<UpdateInfo>("updater_check"),
+    updaterStatus: () => tauri.invoke<UpdaterStatus>("updater_status"),
+    updaterDownload: (downloadUrl: string, fileName: string) =>
+      tauri.invoke<string>("updater_download", { downloadUrl, fileName }),
+    updaterApplyAndRestart: () => tauri.invoke<void>("updater_apply_and_restart"),
+
+    onUpdaterAvailable: (cb: (info: UpdateInfo) => void) => {
+      let unlisten: (() => void) | undefined;
+      let active = true;
+      tauri.event.listen<UpdateInfo>("updater:available", (e) => {
+        if (active) cb(e.payload);
+      }).then((u) => {
+        unlisten = u;
+        if (!active && unlisten) unlisten();
+      });
+      return () => {
+        active = false;
+        if (unlisten) unlisten();
+      };
+    },
+
+    onUpdaterProgress: (cb: (progress: DownloadProgress) => void) => {
+      let unlisten: (() => void) | undefined;
+      let active = true;
+      tauri.event.listen<DownloadProgress>("updater:progress", (e) => {
+        if (active) cb(e.payload);
+      }).then((u) => {
+        unlisten = u;
+        if (!active && unlisten) unlisten();
+      });
+      return () => {
+        active = false;
+        if (unlisten) unlisten();
+      };
+    },
+
+    onUpdaterReady: (cb: (data: { version?: string; installer_path?: string }) => void) => {
+      let unlisten: (() => void) | undefined;
+      let active = true;
+      tauri.event.listen<{ version?: string; installer_path?: string }>("updater:ready", (e) => {
+        if (active) cb(e.payload);
+      }).then((u) => {
+        unlisten = u;
+        if (!active && unlisten) unlisten();
+      });
+      return () => {
+        active = false;
+        if (unlisten) unlisten();
+      };
+    },
 
     windowMinimize: () => tauri.window.appWindow.minimize(),
     windowMaximize: () => tauri.window.appWindow.toggleMaximize(),

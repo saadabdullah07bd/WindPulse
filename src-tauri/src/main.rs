@@ -6,12 +6,14 @@
 mod binaries;
 mod adb;
 mod scrcpy;
+mod updater;
 
 use tauri::{Manager, State, Window};
 use serde::{Deserialize, Serialize};
 use adb::{AdbResponse, DevicesResponse, DeviceNameResponse, MdnsResponse};
 use scrcpy::{ScrcpyManager, ScrcpyStartResponse};
 use binaries::find_binary;
+use updater::{updater_check, updater_status, updater_download, updater_apply_and_restart, UpdaterState};
 
 #[derive(Serialize, Deserialize)]
 pub struct BinariesCheck {
@@ -98,9 +100,15 @@ fn scrcpy_active_count(manager: State<ScrcpyManager>) -> usize {
 
 fn main() {
     let scrcpy_manager = ScrcpyManager::new();
+    let updater_state = UpdaterState::new();
 
     tauri::Builder::default()
         .manage(scrcpy_manager)
+        .manage(updater_state)
+        .setup(|app| {
+            updater::start_auto_update_worker(app.handle());
+            Ok(())
+        })
         .on_window_event(|event| {
             if let tauri::WindowEvent::Destroyed = event.event() {
                 let manager = event.window().state::<ScrcpyManager>();
@@ -121,6 +129,10 @@ fn main() {
             scrcpy_stop,
             scrcpy_stop_all,
             scrcpy_active_count,
+            updater_check,
+            updater_status,
+            updater_download,
+            updater_apply_and_restart,
         ])
         .run(tauri::generate_context!())
         .expect("error while running windpulse application");

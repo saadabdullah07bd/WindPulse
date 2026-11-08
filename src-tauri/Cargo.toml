@@ -1,6 +1,6 @@
 [package]
 name = "windpulse"
-version = "2.0.0"
+version = "2.1.0"
 description = "Free & Open Source Android Screen Mirroring in Rust"
 authors = ["Muhammad Saad Abdullah"]
 license = "MIT"
@@ -17,3 +17,4 @@ tokio = { version = "1", features = ["full"] }
 regex = "1.10"
 rand = "0.8"
 which = "6.0"
+ureq = { version = "2.10", features = ["json"] }
