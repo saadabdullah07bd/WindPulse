@@ -85,8 +85,12 @@ export function useWindPulse() {
 
     // Auto-select first active device if current selection is invalid
     const activeDevices = devicesWithNames.filter(d => d.state !== "offline");
-    if (activeDevices.length > 0 && !activeDevices.some(d => d.serial === selectedDeviceRef.current)) {
-      setSelectedDevice(activeDevices[0].serial);
+    if (activeDevices.length > 0) {
+      if (!activeDevices.some(d => d.serial === selectedDeviceRef.current)) {
+        setSelectedDevice(activeDevices[0].serial);
+      }
+    } else {
+      setSelectedDevice("");
     }
   }, [addLog]);
 

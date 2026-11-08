@@ -347,7 +347,17 @@ const Index = () => {
             >
               {/* Device selector */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-medium text-muted-foreground">Device</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-medium text-muted-foreground">Device</label>
+                  <button
+                    type="button"
+                    onClick={() => wp.refreshDevices()}
+                    className="text-[10px] text-primary hover:text-primary/80 flex items-center gap-1 transition-colors font-medium px-1.5 py-0.5 rounded hover:bg-primary/5"
+                    title="Scan for connected devices (USB & Wireless)"
+                  >
+                    <RefreshCw size={10} /> Scan
+                  </button>
+                </div>
                 <CustomSelect
                   value={wp.devices.find(d => d.serial === wp.selectedDevice)?.name || ""}
                   onChange={(name) => {
@@ -358,8 +368,33 @@ const Index = () => {
                   placeholder="Searching..."
                 />
                 <p className="text-[9px] text-muted-foreground/60 text-center font-medium">
-                  {wp.selectedDevice ? `${connectionType} connection` : "Scanning..."}
+                  {wp.selectedDevice ? `${connectionType} connection` : "Scanning (USB & Wi-Fi)..."}
                 </p>
+
+                {wp.devices.length === 0 && (
+                  <div className="p-2 rounded-lg bg-secondary/30 border border-border/60 text-center space-y-1">
+                    <p className="text-[10px] text-muted-foreground">
+                      No device detected
+                    </p>
+                    <div className="flex items-center justify-center gap-2 pt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => setHowToUseOpen(true)}
+                        className="text-[9px] text-primary hover:underline font-medium"
+                      >
+                        USB Guide
+                      </button>
+                      <span className="text-[8px] text-muted-foreground/40">•</span>
+                      <button
+                        type="button"
+                        onClick={() => setQrModalOpen(true)}
+                        className="text-[9px] text-primary hover:underline font-medium"
+                      >
+                        Pair with QR
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* USB → Wireless switch button */}
                 {connectionType === "USB" && wp.selectedDevice && (

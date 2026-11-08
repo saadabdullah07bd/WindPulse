@@ -107,6 +107,9 @@ fn main() {
         .manage(updater_state)
         .setup(|app| {
             updater::start_auto_update_worker(app.handle());
+            std::thread::spawn(|| {
+                let _ = adb::start_server();
+            });
             Ok(())
         })
         .on_window_event(|event| {

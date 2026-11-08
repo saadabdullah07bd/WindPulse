@@ -52,6 +52,7 @@ pub fn run_adb_cmd(args: &[&str]) -> Result<String, String> {
     let mut cmd = Command::new(&adb.path);
     cmd.args(args);
     cmd.current_dir(&adb.cwd);
+    cmd.env("ADB_MDNS_AUTO_CONNECT", "all");
 
     #[cfg(target_os = "windows")]
     cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
@@ -82,15 +83,41 @@ pub fn start_server() -> AdbResponse {
             message: Some(msg),
             error: None,
         },
-        Err(e) => AdbResponse {
-            success: false,
-            message: None,
-            error: Some(e),
-        },
+        Err(_) => {
+            let _ = run_adb_cmd(&["kill-server"]);
+            match run_adb_cmd(&["start-server"]) {
+                Ok(msg) => AdbResponse {
+                    success: true,
+                    message: Some(msg),
+                    error: None,
+                },
+                Err(e) => AdbResponse {
+                    success: false,
+                    message: None,
+                    error: Some(e),
+                },
+            }
+        }
     }
 }
 
 pub fn list_devices() -> DevicesResponse {
+    // Check discovered mDNS services and auto-connect if any wireless service is advertising
+    if let Ok(mdns_out) = run_adb_cmd(&["mdns", "services"]) {
+        for line in mdns_out.lines().skip(1) {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.len() >= 3 {
+                let service_type = parts[1];
+                let address = parts[2];
+                if (service_type.contains("_adb-tls-connect") || service_type.contains("_adb._tcp"))
+                    && !address.is_empty()
+                {
+                    let _ = run_adb_cmd(&["connect", address]);
+                }
+            }
+        }
+    }
+
     match run_adb_cmd(&["devices", "-l"]) {
         Ok(stdout) => {
             let mut devices = Vec::new();
@@ -118,12 +145,15 @@ pub fn list_devices() -> DevicesResponse {
                         .map(|c| c[1].to_string())
                         .unwrap_or_else(|| model.clone());
 
-                    devices.push(DeviceInfo {
-                        serial,
-                        state,
-                        model,
-                        name,
-                    });
+                    // Deduplicate if multiple records for same device exist
+                    if !devices.iter().any(|d: &DeviceInfo| d.model == model && d.state == state) {
+                        devices.push(DeviceInfo {
+                            serial,
+                            state,
+                            model,
+                            name,
+                        });
+                    }
                 }
             }
 
