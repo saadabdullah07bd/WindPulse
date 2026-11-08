@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader};
 use std::process::{Child, Command, Stdio};
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicU32, Ordering};
 use tauri::Window;
@@ -53,6 +55,9 @@ impl ScrcpyManager {
         cmd.current_dir(&scrcpy_bin.cwd);
         cmd.stdout(Stdio::piped());
         cmd.stderr(Stdio::piped());
+
+        #[cfg(target_os = "windows")]
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
 
         match cmd.spawn() {
             Ok(mut child) => {
