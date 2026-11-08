@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Play, Square, Monitor, Camera, Tablet,
   Volume2, Smartphone, Wifi, Menu, X, Trash2,
-  Settings, Palette, Check, Plus, ArrowRightLeft, HelpCircle, Keyboard
+  Settings, Palette, Check, Plus, ArrowRightLeft, HelpCircle, Keyboard, QrCode
 } from "lucide-react";
 import HowToUseModal from "@/components/HowToUseModal";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -12,6 +12,7 @@ import StatusBadge from "@/components/StatusBadge";
 import SettingsCard from "@/components/SettingsCard";
 import ConsoleLog from "@/components/ConsoleLog";
 import ShortcutsModal from "@/components/ShortcutsModal";
+import QRCodeModal from "@/components/QRCodeModal";
 import { useWindPulse } from "@/hooks/useWindPulse";
 import { useTheme, THEMES } from "@/hooks/useTheme";
 import { getSavedDevices, removeSavedDevice, type SavedDevice } from "@/lib/savedDevices";
@@ -56,6 +57,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>("mirror");
   const prevTab = useRef<ActiveTab>("mirror");
   const [pairingOpen, setPairingOpen] = useState(false);
+  const [qrModalOpen, setQrModalOpen] = useState(false);
   const themeCtx = useTheme();
 
   // Wireless debugging pairing
@@ -281,58 +283,70 @@ const Index = () => {
               </div>
 
               {/* Wireless Pairing */}
-              <div className="space-y-1.5">
-                <button
-                  onClick={() => setPairingOpen(!pairingOpen)}
-                  className="flex items-center justify-between w-full group"
+              <div className="space-y-2">
+                <motion.button
+                  onClick={() => setQrModalOpen(true)}
+                  className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-[11px] font-semibold text-primary-foreground bg-primary shadow-sm hover:brightness-105 transition-all"
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">Wireless Pairing</span>
-                  <motion.div
-                    animate={{ rotate: pairingOpen ? 45 : 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="w-5 h-5 rounded-md flex items-center justify-center bg-secondary/80 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors"
-                  >
-                    <Plus size={12} />
-                  </motion.div>
-                </button>
+                  <QrCode size={14} />
+                  <span>Pair with QR Code (Recommended)</span>
+                </motion.button>
 
-                <AnimatePresence>
-                  {pairingOpen && (
+                <div className="space-y-1.5 pt-0.5">
+                  <button
+                    onClick={() => setPairingOpen(!pairingOpen)}
+                    className="flex items-center justify-between w-full group py-0.5"
+                  >
+                    <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">Pair with Code (Manual)</span>
                     <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2, ease: "easeInOut" }}
-                      className="overflow-hidden"
+                      animate={{ rotate: pairingOpen ? 45 : 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="w-5 h-5 rounded-md flex items-center justify-center bg-secondary/80 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors"
                     >
-                      <div className="space-y-1.5 pt-1">
-                        <p className="text-[9px] text-muted-foreground/50">Settings → Developer Options → Wireless debugging → Pair device</p>
-                        <input
-                          type="text"
-                          value={pairingCode}
-                          onChange={e => setPairingCode(e.target.value)}
-                          placeholder="Pairing code (e.g. 482956)"
-                          className="input-minimal font-mono text-[11px]"
-                        />
-                        <input
-                          type="text"
-                          value={pairingAddress}
-                          onChange={e => setPairingAddress(e.target.value)}
-                          placeholder="IP:Port (e.g. 192.168.1.5:37123)"
-                          className="input-minimal font-mono text-[11px]"
-                        />
-                        <motion.button
-                          onClick={handlePair}
-                          className="w-full py-1.5 rounded-lg text-[10px] font-medium text-primary border border-primary/20 hover:bg-primary/5 transition-colors"
-                          whileHover={{ scale: 1.01 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          Pair Device
-                        </motion.button>
-                      </div>
+                      <Plus size={12} />
                     </motion.div>
-                  )}
-                </AnimatePresence>
+                  </button>
+
+                  <AnimatePresence>
+                    {pairingOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                      >
+                        <div className="space-y-1.5 pt-1">
+                          <p className="text-[9px] text-muted-foreground/50">Settings → Developer Options → Wireless debugging → Pair device</p>
+                          <input
+                            type="text"
+                            value={pairingCode}
+                            onChange={e => setPairingCode(e.target.value)}
+                            placeholder="Pairing code (e.g. 482956)"
+                            className="input-minimal font-mono text-[11px]"
+                          />
+                          <input
+                            type="text"
+                            value={pairingAddress}
+                            onChange={e => setPairingAddress(e.target.value)}
+                            placeholder="IP:Port (e.g. 192.168.1.5:37123)"
+                            className="input-minimal font-mono text-[11px]"
+                          />
+                          <motion.button
+                            onClick={handlePair}
+                            className="w-full py-1.5 rounded-lg text-[10px] font-medium text-primary border border-primary/20 hover:bg-primary/5 transition-colors"
+                            whileHover={{ scale: 1.01 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            Pair Device
+                          </motion.button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
 
               {/* Saved Wireless Devices */}
@@ -460,6 +474,14 @@ const Index = () => {
       <AnimatePresence>{loading && <LoadingScreen onComplete={handleLoadComplete} />}</AnimatePresence>
       <ShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       <HowToUseModal open={howToUseOpen} onClose={() => setHowToUseOpen(false)} />
+      <QRCodeModal
+        open={qrModalOpen}
+        onClose={() => setQrModalOpen(false)}
+        onDeviceConnected={handleConnectIp}
+        isElectron={wp.isElectron}
+        addLog={wp.addLog}
+        refreshDevices={wp.refreshDevices}
+      />
 
       {/* Mobile Header */}
       <div className="lg:hidden sticky top-0 z-30 bg-card/90 backdrop-blur-md border-b border-border px-3 py-2 flex items-center justify-between">

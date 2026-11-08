@@ -219,6 +219,25 @@ ipcMain.handle("adb:pair", async (_e, address, code) => {
   });
 });
 
+ipcMain.handle("adb:mdns-services", async () => {
+  const res = await runAdb(["mdns", "services"]);
+  if (!res.success) return res;
+  const services = [];
+  for (const line of res.stdout.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.toLowerCase().startsWith("list of")) continue;
+    const parts = trimmed.split(/\s+/);
+    if (parts.length >= 3) {
+      services.push({
+        name: parts[0],
+        type: parts[1],
+        address: parts[2],
+      });
+    }
+  }
+  return { success: true, services };
+});
+
 // ─── scrcpy ───
 ipcMain.handle("scrcpy:start", (_e, args) => {
   try {

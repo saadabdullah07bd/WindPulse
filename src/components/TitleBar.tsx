@@ -7,6 +7,7 @@ const TitleBar = () => {
 
   return (
     <div
+      data-tauri-drag-region
       className="h-8 bg-card border-b border-border flex items-center justify-between select-none shrink-0 transition-colors duration-300"
       style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
     >

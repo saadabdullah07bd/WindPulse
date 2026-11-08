@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld("windpulse", {
   adbDisconnect: (serial) => ipcRenderer.invoke("adb:disconnect", serial),
   adbGetDeviceName: (serial) => ipcRenderer.invoke("adb:device-name", serial),
   adbPair: (address, code) => ipcRenderer.invoke("adb:pair", address, code),
+  adbMdndServices: () => ipcRenderer.invoke("adb:mdns-services"),
 
   // scrcpy
   scrcpyStart: (args) => ipcRenderer.invoke("scrcpy:start", args),

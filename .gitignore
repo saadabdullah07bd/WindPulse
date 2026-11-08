@@ -12,6 +12,8 @@ dist
 dist-ssr
 *.local
 electron-release
+rust-release
+src-tauri/target
 bin/
 output-release/
 

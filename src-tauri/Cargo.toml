@@ -1,0 +1,19 @@
+[package]
+name = "windpulse"
+version = "2.0.0"
+description = "Free & Open Source Android Screen Mirroring in Rust"
+authors = ["Muhammad Saad Abdullah"]
+license = "MIT"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "1.5" }
+
+[dependencies]
+tauri = { version = "1.8", features = ["window-close", "window-minimize", "window-maximize", "window-unmaximize", "window-set-always-on-top"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1", features = ["full"] }
+regex = "1.10"
+rand = "0.8"
+which = "6.0"

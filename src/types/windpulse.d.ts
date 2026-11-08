@@ -13,6 +13,12 @@ export interface DeviceInfo {
   state?: "device" | "unauthorized" | "offline";
 }
 
+export interface MdnsService {
+  name: string;
+  type: string;
+  address: string;
+}
+
 export interface WindPulseAPI {
   adbStartServer: () => Promise<{ success: boolean; error?: string }>;
   adbDevices: () => Promise<{ success: boolean; devices: DeviceInfo[]; error?: string }>;
@@ -21,6 +27,7 @@ export interface WindPulseAPI {
   adbDisconnect: (serial: string) => Promise<{ success: boolean; error?: string }>;
   adbGetDeviceName: (serial: string) => Promise<{ success: boolean; name: string }>;
   adbPair: (address: string, code: string) => Promise<{ success: boolean; error?: string }>;
+  adbMdndServices: () => Promise<{ success: boolean; services?: MdnsService[]; error?: string }>;
 
   scrcpyStart: (args: string[]) => Promise<{ success: boolean; id?: number; error?: string }>;
   scrcpyStop: (id: number) => Promise<{ success: boolean; error?: string }>;
