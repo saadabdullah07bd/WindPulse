@@ -15,8 +15,8 @@
 </p>
 
 <p>
-  <a href="https://github.com/saadabdullah07bd/WindPulse/releases/download/Files/WindPulseV2.0.Setupx64.exe">
-    <img src="https://img.shields.io/badge/⬇_Download_WindPulse_v2.0-00b4d8?style=for-the-badge&logoColor=white" alt="Download" />
+  <a href="https://github.com/saadabdullah07bd/WindPulse/releases/latest">
+    <img src="https://img.shields.io/badge/⬇_Download_WindPulse_v2.1-00b4d8?style=for-the-badge&logoColor=white" alt="Download" />
   </a>
 </p>
 
@@ -30,8 +30,12 @@
 
 <table>
   <tr>
-    <td>📱 <strong>USB & Wireless Mirroring</strong></td>
-    <td>Connect via USB cable or Wi-Fi with native <code>adb pair</code> support</td>
+    <td>📱 <strong>USB & Wireless (QR Code)</strong></td>
+    <td>Connect via USB or scan a QR code with Android 11+ Wireless Debugging (auto mDNS pairing)</td>
+  </tr>
+  <tr>
+    <td>🦀 <strong>Rust Powered & Lightweight</strong></td>
+    <td>Rebuilt with native Rust (Tauri) — drops RAM usage to ~25 MB and startup is instant</td>
   </tr>
   <tr>
     <td>🖥️ <strong>Multiple Devices</strong></td>
@@ -70,7 +74,7 @@
 <h3>Quick Install (Recommended)</h3>
 
 <ol>
-  <li>Download <a href="https://github.com/saadabdullah07bd/WindPulse/releases/download/Files/WindPulseV2.0.Setupx64.exe"><strong>WindPulseV2.0.Setupx64.exe</strong></a></li>
+  <li>Download <a href="https://github.com/saadabdullah07bd/WindPulse/releases/download/v2.1.0/WindPulseV2.0.Setupx64.exe"><strong>WindPulseV2.0.Setupx64.exe</strong></a> from <a href="https://github.com/saadabdullah07bd/WindPulse/releases/latest"><strong>Releases</strong></a></li>
   <li>Run the installer</li>
   <li>Launch WindPulse from your desktop</li>
   <li>Connect your Android device via USB or Wi-Fi</li>
@@ -104,16 +108,12 @@
 git clone https://github.com/saadabdullah07bd/WindPulse.git
 cd WindPulse
 
-# Install dependencies (includes Electron & packager)
+# Install frontend dependencies
 npm install
 
-# Place adb.exe and scrcpy.exe in a bin/ folder, or ensure they are in your system PATH
-
-# Run in development mode
-npm run electron:dev
-
-# Build the installer
-npm run electron:pack
+# Build frontend and Rust native application
+npm run build
+cargo build --release --manifest-path src-tauri/Cargo.toml
 ```
 
 ---
@@ -129,13 +129,13 @@ npm run electron:pack
   <li>Open WindPulse and click <strong>Connect</strong></li>
 </ol>
 
-<h3>Wireless Connection</h3>
+<h3>Wireless Connection (QR Code - Recommended)</h3>
 
 <ol>
   <li>Enable <strong>Wireless Debugging</strong> in Developer Options (Android 11+)</li>
-  <li>Open WindPulse and select <strong>Wireless Pairing</strong></li>
-  <li>Enter the pairing code shown on your device</li>
-  <li>Click <strong>Connect</strong></li>
+  <li>In WindPulse, open <strong>Wireless Pairing</strong> and click <strong>Pair with QR Code</strong></li>
+  <li>On your phone, tap <strong>Pair device with QR code</strong> and point your camera at the screen</li>
+  <li>WindPulse will automatically discover, pair, and connect via mDNS!</li>
 </ol>
 
 ---
@@ -144,19 +144,15 @@ npm run electron:pack
 
 <table>
   <tr>
-    <td><strong>Framework</strong></td>
-    <td>Electron + React + TypeScript</td>
+    <td><strong>Backend</strong></td>
+    <td>Rust (Tauri native Windows runtime)</td>
   </tr>
   <tr>
-    <td><strong>UI</strong></td>
-    <td>Tailwind CSS + shadcn/ui</td>
+    <td><strong>Frontend</strong></td>
+    <td>React + TypeScript + Tailwind CSS + shadcn/ui</td>
   </tr>
   <tr>
-    <td><strong>Build</strong></td>
-    <td>Vite + electron-builder</td>
-  </tr>
-  <tr>
-    <td><strong>Mirroring</strong></td>
+    <td><strong>Mirroring Engine</strong></td>
     <td>scrcpy + ADB</td>
   </tr>
 </table>
