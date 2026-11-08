@@ -158,7 +158,9 @@ ipcMain.handle("adb:device-name", async (_e, serial) => {
 
 ipcMain.handle("adb:connect", async (_e, ip) => {
   const res = await runAdb(["connect", ip]);
-  return { success: res.success && !res.stdout?.includes("failed"), message: res.stdout, error: res.error || res.stdout };
+  const out = (res.stdout || "").toLowerCase();
+  const success = res.success && (out.includes("connected to") || out.includes("already connected")) && !out.includes("cannot") && !out.includes("failed") && !out.includes("unable");
+  return { success, message: res.stdout, error: success ? undefined : (res.error || res.stdout) };
 });
 
 ipcMain.handle("adb:tcpip", (_e, serial) => runAdb(["-s", serial, "tcpip", "5555"]));

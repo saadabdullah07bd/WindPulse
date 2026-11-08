@@ -172,7 +172,11 @@ pub fn get_device_name(serial: &str) -> DeviceNameResponse {
 pub fn connect(ip: &str) -> AdbResponse {
     match run_adb_cmd(&["connect", ip]) {
         Ok(out) => {
-            let success = !out.contains("failed") && !out.contains("unable");
+            let out_lower = out.to_lowercase();
+            let success = (out_lower.contains("connected to") || out_lower.contains("already connected"))
+                && !out_lower.contains("cannot")
+                && !out_lower.contains("failed")
+                && !out_lower.contains("unable");
             AdbResponse {
                 success,
                 message: Some(out.clone()),

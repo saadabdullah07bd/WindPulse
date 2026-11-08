@@ -7,7 +7,7 @@ mod binaries;
 mod adb;
 mod scrcpy;
 
-use tauri::{State, Window};
+use tauri::{Manager, State, Window};
 use serde::{Deserialize, Serialize};
 use adb::{AdbResponse, DevicesResponse, DeviceNameResponse, MdnsResponse};
 use scrcpy::{ScrcpyManager, ScrcpyStartResponse};
@@ -101,6 +101,12 @@ fn main() {
 
     tauri::Builder::default()
         .manage(scrcpy_manager)
+        .on_window_event(|event| {
+            if let tauri::WindowEvent::Destroyed = event.event() {
+                let manager = event.window().state::<ScrcpyManager>();
+                manager.stop_all();
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             adb_start_server,
             adb_devices,

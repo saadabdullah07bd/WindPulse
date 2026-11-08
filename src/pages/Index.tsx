@@ -283,43 +283,43 @@ const Index = () => {
               </div>
 
               {/* Wireless Pairing */}
-              <div className="space-y-2">
-                <motion.button
-                  onClick={() => setQrModalOpen(true)}
-                  className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-[11px] font-semibold text-primary-foreground bg-primary shadow-sm hover:brightness-105 transition-all"
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.98 }}
+              <div className="space-y-1.5">
+                <button
+                  onClick={() => setPairingOpen(!pairingOpen)}
+                  className="flex items-center justify-between w-full group"
                 >
-                  <QrCode size={14} />
-                  <span>Pair with QR Code (Recommended)</span>
-                </motion.button>
-
-                <div className="space-y-1.5 pt-0.5">
-                  <button
-                    onClick={() => setPairingOpen(!pairingOpen)}
-                    className="flex items-center justify-between w-full group py-0.5"
+                  <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">Wireless Pairing</span>
+                  <motion.div
+                    animate={{ rotate: pairingOpen ? 45 : 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="w-5 h-5 rounded-md flex items-center justify-center bg-secondary/80 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors"
                   >
-                    <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">Pair with Code (Manual)</span>
-                    <motion.div
-                      animate={{ rotate: pairingOpen ? 45 : 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="w-5 h-5 rounded-md flex items-center justify-center bg-secondary/80 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors"
-                    >
-                      <Plus size={12} />
-                    </motion.div>
-                  </button>
+                    <Plus size={12} />
+                  </motion.div>
+                </button>
 
-                  <AnimatePresence>
-                    {pairingOpen && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2, ease: "easeInOut" }}
-                        className="overflow-hidden"
-                      >
-                        <div className="space-y-1.5 pt-1">
-                          <p className="text-[9px] text-muted-foreground/50">Settings → Developer Options → Wireless debugging → Pair device</p>
+                <AnimatePresence>
+                  {pairingOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div className="space-y-2 pt-1.5">
+                        <motion.button
+                          onClick={() => setQrModalOpen(true)}
+                          className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[10px] font-medium text-foreground bg-secondary/80 hover:bg-secondary border border-border/40 transition-colors"
+                          whileHover={{ scale: 1.01 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          <QrCode size={13} className="text-primary" />
+                          <span>Pair with QR Code</span>
+                        </motion.button>
+
+                        <div className="space-y-1.5 pt-0.5">
+                          <p className="text-[9px] text-muted-foreground/50">Or enter pairing details manually:</p>
                           <input
                             type="text"
                             value={pairingCode}
@@ -343,10 +343,10 @@ const Index = () => {
                             Pair Device
                           </motion.button>
                         </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* Saved Wireless Devices */}
