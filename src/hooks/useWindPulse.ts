@@ -200,8 +200,17 @@ export function useWindPulse() {
     screenOff?: boolean;
     hidKeyboard?: boolean;
     hidMouse?: boolean;
+    hidGamepad?: boolean;
+    hwdec?: string;
+    alwaysOnTop?: boolean;
+    borderless?: boolean;
+    audioBuffer?: number;
+    camTorch?: boolean;
+    camZoom?: number;
+    camHighSpeed?: boolean;
     tabletRes?: string;
     tabletDpi?: string;
+    tabletApp?: string;
   }) => {
     if (!selectedDevice) { addLog("No device selected", "error"); return; }
 
@@ -215,19 +224,44 @@ export function useWindPulse() {
 
     if (config.audioOnly) {
       args.push("--no-video", "--no-control");
+      if (config.audioBuffer && config.audioBuffer !== 50) {
+        args.push(`--audio-buffer=${config.audioBuffer}`);
+      }
       addLog("Starting audio-only stream...", "info");
     } else {
       if (config.hidKeyboard) args.push("-K");
       if (config.hidMouse) args.push("-M");
+      if (config.hidGamepad) args.push("--gamepad=uhid");
 
       const enc = config.encoder || "H.264 (AVC)";
       if (enc.includes("H.265")) args.push("--video-codec=h265");
       else if (enc.includes("AV1")) args.push("--video-codec=av1");
 
+      // Hardware decoding (scrcpy v5.0+)
+      if (config.hwdec === "D3D11VA (Direct3D 11)") {
+        args.push("--hwdec=d3d11va");
+      } else if (config.hwdec === "Software (CPU)") {
+        args.push("--hwdec=disabled");
+      } else {
+        args.push("--hwdec=auto");
+      }
+
+      // Display customization
+      if (config.alwaysOnTop) args.push("--always-on-top");
+      if (config.borderless) args.push("--window-borderless");
+
+      // Audio buffer tuning
+      if (config.audioBuffer && config.audioBuffer !== 50) {
+        args.push(`--audio-buffer=${config.audioBuffer}`);
+      }
+
       if (config.enableCamera) {
         args.push("--video-source=camera", "--camera-facing", config.camSource || "back");
         args.push("--camera-fps", config.camFps || "30");
         args.push("--camera-size", config.camRes || "1920x1080");
+        if (config.camTorch) args.push("--camera-torch");
+        if (config.camZoom && config.camZoom > 1) args.push(`--camera-zoom=${config.camZoom}`);
+        if (config.camHighSpeed) args.push("--camera-high-speed");
         const orient = config.camOrientation || "Normal";
         if (orient !== "Normal") {
           const orientMap: Record<string, string> = { "90° CW": "90", "180°": "180", "270° CW": "270", "Flip": "flip0" };
@@ -238,6 +272,9 @@ export function useWindPulse() {
         const res = config.tabletRes || "1920x1080";
         const dpi = (config.tabletDpi || "240 DPI").split(" ")[0];
         args.push(`--new-display=${res}/${dpi}`);
+        if (config.tabletApp?.trim()) {
+          args.push(`--start-app=${config.tabletApp.trim()}`);
+        }
       } else {
         if (config.disableAudio) args.push("--no-audio");
       }

@@ -4,7 +4,7 @@ import {
   Play, Square, Monitor, Camera, Tablet,
   Volume2, Smartphone, Wifi, Menu, X, Trash2,
   Settings, Palette, Check, Plus, ArrowRightLeft, HelpCircle, Keyboard, QrCode,
-  Loader2, RefreshCw, ArrowUpCircle
+  Loader2, RefreshCw, ArrowUpCircle, Gamepad2, Zap
 } from "lucide-react";
 import HowToUseModal from "@/components/HowToUseModal";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -41,6 +41,23 @@ const Toggle = ({ checked, onChange, label }: { checked: boolean; onChange: (v: 
 
 /* ─── Active Tab type ─── */
 type ActiveTab = "mirror" | "settings";
+
+type PresetKey = "balanced" | "gaming" | "low_wifi" | "webcam" | "tablet" | "custom";
+
+interface PresetItem {
+  id: PresetKey;
+  label: string;
+  icon: typeof Monitor;
+  desc: string;
+}
+
+const PRESETS: PresetItem[] = [
+  { id: "balanced", label: "Balanced", icon: Monitor, desc: "1080p • 12M • Auto HW" },
+  { id: "gaming", label: "Pro Gaming", icon: Gamepad2, desc: "H.265 • 24M • D3D11 • HID" },
+  { id: "low_wifi", label: "Wi-Fi Saver", icon: Wifi, desc: "720p • 6M • Smooth Buffer" },
+  { id: "webcam", label: "Webcam HD", icon: Camera, desc: "1080p 60FPS • Torch • Mute" },
+  { id: "tablet", label: "Virtual Tab", icon: Tablet, desc: "Secondary Desktop Screen" },
+];
 
 const slideVariants = {
   enterFromRight: { x: 60, opacity: 0 },
@@ -93,9 +110,19 @@ const Index = () => {
   const [screenOff, setScreenOff] = useState(false);
   const [hidKeyboard, setHidKeyboard] = useState(false);
   const [hidMouse, setHidMouse] = useState(false);
+  const [hidGamepad, setHidGamepad] = useState(false);
+  const [hwdec, setHwdec] = useState("Auto (Hardware)");
+  const [alwaysOnTop, setAlwaysOnTop] = useState(false);
+  const [borderless, setBorderless] = useState(false);
+  const [audioBuffer, setAudioBuffer] = useState(50);
+  const [camTorch, setCamTorch] = useState(false);
+  const [camZoom, setCamZoom] = useState(1);
+  const [camHighSpeed, setCamHighSpeed] = useState(false);
   const [tabletMode, setTabletMode] = useState(false);
   const [tabletRes, setTabletRes] = useState("1920x1080");
   const [tabletDpi, setTabletDpi] = useState("240 DPI");
+  const [tabletApp, setTabletApp] = useState("");
+  const [activePreset, setActivePreset] = useState<PresetKey>("balanced");
 
   const wp = useWindPulse();
 
@@ -117,21 +144,75 @@ const Index = () => {
     setLoading(false);
   }, []);
 
-  const handleStart = useCallback(() => {
-    wp.startMirror({
-      audioOnly, enableMirror, enableCamera, tabletMode,
-      encoder, bitrate, camSource, camRes, camFps, camOrientation,
-      noCamAudio, disableAudio, keepAwake, screenOff,
-      hidKeyboard, hidMouse, tabletRes, tabletDpi,
-    });
-  }, [wp, audioOnly, enableMirror, enableCamera, tabletMode, encoder, bitrate, camSource, camRes, camFps, camOrientation, noCamAudio, disableAudio, keepAwake, screenOff, hidKeyboard, hidMouse, tabletRes, tabletDpi]);
-
   const handleModeSwitch = useCallback((mode: "mirror" | "audioOnly" | "camera" | "tablet" | "none") => {
     setEnableMirror(mode === "mirror");
     setAudioOnly(mode === "audioOnly");
     setEnableCamera(mode === "camera");
     setTabletMode(mode === "tablet");
   }, []);
+
+  const applyPreset = useCallback((preset: PresetKey) => {
+    setActivePreset(preset);
+    if (preset === "balanced") {
+      handleModeSwitch("mirror");
+      setEncoder("H.264 (AVC)");
+      setBitrate(12);
+      setHwdec("Auto (Hardware)");
+      setAlwaysOnTop(false);
+      setBorderless(false);
+      setAudioBuffer(50);
+      setDisableAudio(false);
+      setHidGamepad(false);
+    } else if (preset === "gaming") {
+      handleModeSwitch("mirror");
+      setEncoder("H.265 (HEVC)");
+      setBitrate(24);
+      setHwdec("D3D11VA (Direct3D 11)");
+      setHidKeyboard(true);
+      setHidMouse(true);
+      setHidGamepad(true);
+      setAudioBuffer(25);
+      setAlwaysOnTop(true);
+      setBorderless(false);
+    } else if (preset === "low_wifi") {
+      handleModeSwitch("mirror");
+      setEncoder("H.264 (AVC)");
+      setBitrate(6);
+      setHwdec("Auto (Hardware)");
+      setAudioBuffer(80);
+      setAlwaysOnTop(false);
+      setBorderless(false);
+    } else if (preset === "webcam") {
+      handleModeSwitch("camera");
+      setCamRes("1920x1080");
+      setCamFps("60");
+      setCamSource("back");
+      setNoCamAudio(true);
+      setCamTorch(false);
+      setCamZoom(1);
+    } else if (preset === "tablet") {
+      handleModeSwitch("tablet");
+      setTabletRes("1920x1080");
+      setTabletDpi("240 DPI");
+    }
+  }, [handleModeSwitch]);
+
+  const handleStart = useCallback(() => {
+    wp.startMirror({
+      audioOnly, enableMirror, enableCamera, tabletMode,
+      encoder, bitrate, camSource, camRes, camFps, camOrientation,
+      noCamAudio, disableAudio, keepAwake, screenOff,
+      hidKeyboard, hidMouse, tabletRes, tabletDpi,
+      hidGamepad, hwdec, alwaysOnTop, borderless, audioBuffer,
+      camTorch, camZoom, camHighSpeed, tabletApp,
+    });
+  }, [
+    wp, audioOnly, enableMirror, enableCamera, tabletMode, encoder, bitrate,
+    camSource, camRes, camFps, camOrientation, noCamAudio, disableAudio,
+    keepAwake, screenOff, hidKeyboard, hidMouse, tabletRes, tabletDpi,
+    hidGamepad, hwdec, alwaysOnTop, borderless, audioBuffer,
+    camTorch, camZoom, camHighSpeed, tabletApp
+  ]);
 
   // Keyboard shortcuts listener
   useEffect(() => {
@@ -644,6 +725,40 @@ const Index = () => {
               <p className="text-[11px] text-muted-foreground mt-0.5">Configure your mirror session</p>
             </div>
 
+            {/* Quick Presets Bar */}
+            <div className="p-2.5 rounded-xl bg-card border border-border space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-foreground flex items-center gap-1.5">
+                  <Zap size={12} className="text-primary" /> Quick Presets
+                </span>
+                <span className="text-[9px] text-muted-foreground">scrcpy v5.0.1 Optimized</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+                {PRESETS.map((p) => {
+                  const Icon = p.icon;
+                  const isActive = activePreset === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => applyPreset(p.id)}
+                      className={`flex flex-col items-start p-2 rounded-lg border text-left transition-all ${
+                        isActive
+                          ? "bg-primary/10 border-primary text-foreground shadow-sm"
+                          : "bg-secondary/40 border-transparent hover:bg-secondary text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Icon size={12} className={isActive ? "text-primary" : "text-muted-foreground"} />
+                        <span className="text-[10px] font-bold truncate">{p.label}</span>
+                      </div>
+                      <span className="text-[8px] leading-tight text-muted-foreground line-clamp-1">{p.desc}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <SettingsCard title="Audio Only" icon={Volume2} delay={0}>
               <Toggle
                 checked={audioOnly}
@@ -660,7 +775,14 @@ const Index = () => {
                 label="Screen mirroring"
               />
               <Toggle checked={disableAudio} onChange={setDisableAudio} label="Mute device audio" />
-              <CustomSelect value={encoder} onChange={setEncoder} options={["H.264 (AVC)", "H.265 (HEVC)", "AV1"]} label="Encoder" />
+              <div className="grid grid-cols-2 gap-2">
+                <CustomSelect value={encoder} onChange={setEncoder} options={["H.264 (AVC)", "H.265 (HEVC)", "AV1"]} label="Encoder" />
+                <CustomSelect value={hwdec} onChange={setHwdec} options={["Auto (Hardware)", "D3D11VA (Direct3D 11)", "Software (CPU)"]} label="Hardware Dec (GPU)" />
+              </div>
+              <div className="grid grid-cols-2 gap-2 pt-0.5">
+                <Toggle checked={alwaysOnTop} onChange={setAlwaysOnTop} label="Always on top" />
+                <Toggle checked={borderless} onChange={setBorderless} label="Borderless window" />
+              </div>
               <div className="space-y-1.5 pt-1">
                 <div className="flex justify-between items-center">
                   <span className="text-[10px] font-medium text-muted-foreground">Bitrate</span>
@@ -668,6 +790,16 @@ const Index = () => {
                 </div>
                 <input
                   type="range" min={2} max={60} value={bitrate} onChange={e => setBitrate(+e.target.value)}
+                  className="w-full h-1 bg-border rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110"
+                />
+              </div>
+              <div className="space-y-1.5 pt-1">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-medium text-muted-foreground">Audio Buffer (Low Latency)</span>
+                  <span className="text-[11px] font-semibold text-foreground tabular-nums">{audioBuffer} ms</span>
+                </div>
+                <input
+                  type="range" min={20} max={150} step={5} value={audioBuffer} onChange={e => setAudioBuffer(+e.target.value)}
                   className="w-full h-1 bg-border rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110"
                 />
               </div>
@@ -680,20 +812,35 @@ const Index = () => {
                 label="Camera mirroring"
               />
               <Toggle checked={noCamAudio} onChange={setNoCamAudio} label="Mute camera mic" />
+              <div className="grid grid-cols-2 gap-2">
+                <Toggle checked={camTorch} onChange={setCamTorch} label="Flashlight / Torch" />
+                <Toggle checked={camHighSpeed} onChange={setCamHighSpeed} label="High-speed (60fps+)" />
+              </div>
               <div className="grid grid-cols-3 gap-2">
                 <CustomSelect value={camSource} onChange={setCamSource} options={["back", "front", "external"]} label="Source" />
                 <CustomSelect value={camRes} onChange={setCamRes} options={["1920x1080", "1280x720", "3840x2160", "2560x1440"]} label="Resolution" />
                 <CustomSelect value={camFps} onChange={setCamFps} options={["30", "60", "90", "120"]} label="FPS" />
               </div>
               <CustomSelect value={camOrientation} onChange={setCamOrientation} options={["Normal", "90° CW", "180°", "270° CW", "Flip"]} label="Orientation" />
+              <div className="space-y-1.5 pt-1">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-medium text-muted-foreground">Camera Zoom</span>
+                  <span className="text-[11px] font-semibold text-foreground tabular-nums">{camZoom}x</span>
+                </div>
+                <input
+                  type="range" min={1} max={8} step={0.5} value={camZoom} onChange={e => setCamZoom(+e.target.value)}
+                  className="w-full h-1 bg-border rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110"
+                />
+              </div>
             </SettingsCard>
 
             <SettingsCard title="Device Control" icon={Smartphone} delay={0}>
               <Toggle checked={keepAwake} onChange={(v) => { setKeepAwake(v); if (v) setScreenOff(false); }} label="Prevent sleep" />
               <Toggle checked={screenOff} onChange={(v) => { setScreenOff(v); if (v) setKeepAwake(false); }} label="Screen off while mirroring" />
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <Toggle checked={hidKeyboard} onChange={setHidKeyboard} label="HID Keyboard" />
                 <Toggle checked={hidMouse} onChange={setHidMouse} label="HID Mouse" />
+                <Toggle checked={hidGamepad} onChange={setHidGamepad} label="HID Gamepad" />
               </div>
             </SettingsCard>
 
@@ -706,6 +853,16 @@ const Index = () => {
               <div className="grid grid-cols-2 gap-2">
                 <CustomSelect value={tabletRes} onChange={setTabletRes} options={["1920x1080", "2560x1440", "3840x2160"]} label="Resolution" />
                 <CustomSelect value={tabletDpi} onChange={setTabletDpi} options={["140 DPI", "240 DPI", "360 DPI", "480 DPI"]} label="Density" />
+              </div>
+              <div className="space-y-1 pt-1">
+                <span className="text-[10px] font-medium text-muted-foreground">Auto-Launch App (Optional)</span>
+                <input
+                  type="text"
+                  value={tabletApp}
+                  onChange={e => setTabletApp(e.target.value)}
+                  placeholder="e.g. +org.mozilla.firefox"
+                  className="w-full h-7 px-2.5 rounded-lg bg-secondary/50 border border-border text-[11px] placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary transition-colors font-mono"
+                />
               </div>
             </SettingsCard>
           </motion.div>
