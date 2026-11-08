@@ -13,6 +13,7 @@ declare global {
           toggleMaximize: () => Promise<void>;
           close: () => Promise<void>;
           setAlwaysOnTop: (alwaysOnTop: boolean) => Promise<void>;
+          startDragging: () => Promise<void>;
         };
       };
     };
@@ -109,6 +110,7 @@ export function initTauriBridge(): boolean {
     windowMaximize: () => tauri.window.appWindow.toggleMaximize(),
     windowClose: () => tauri.window.appWindow.close(),
     windowPin: (pin: boolean) => tauri.window.appWindow.setAlwaysOnTop(pin),
+    windowStartDragging: () => tauri.window.appWindow.startDragging(),
   };
 
   window.windpulse = tauriApi;

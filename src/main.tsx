@@ -11,4 +11,10 @@ import { initTauriBridge } from "./lib/tauriBridge";
 
 initTauriBridge();
 
+// Disable right-click context menu
+document.addEventListener("contextmenu", (e) => {
+  e.preventDefault();
+  return false;
+});
+
 createRoot(document.getElementById("root")!).render(<App />);

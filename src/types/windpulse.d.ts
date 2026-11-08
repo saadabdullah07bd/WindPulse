@@ -45,6 +45,7 @@ export interface WindPulseAPI {
   windowMaximize: () => Promise<void>;
   windowClose: () => Promise<void>;
   windowPin: (pin: boolean) => Promise<void>;
+  windowStartDragging?: () => Promise<void>;
 }
 
 declare global {

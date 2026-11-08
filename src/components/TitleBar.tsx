@@ -5,18 +5,41 @@ const TitleBar = () => {
 
   if (!isElectron) return null;
 
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // Only drag with left mouse button
+    if (e.button === 0) {
+      if (e.detail === 2) {
+        // Double-click to toggle maximize/unmaximize
+        window.windpulse?.windowMaximize();
+      } else {
+        // Start dragging window
+        window.windpulse?.windowStartDragging?.();
+      }
+    }
+  };
+
   return (
     <div
       data-tauri-drag-region
-      className="h-8 bg-card border-b border-border flex items-center justify-between select-none shrink-0 transition-colors duration-300"
+      onMouseDown={handleMouseDown}
+      className="h-8 bg-card border-b border-border flex items-center justify-between select-none shrink-0 transition-colors duration-300 cursor-default"
       style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
     >
-      <div className="flex items-center gap-2 px-3">
-        <span className="text-[11px] font-medium text-muted-foreground transition-colors duration-300">WindPulse</span>
+      <div
+        data-tauri-drag-region
+        className="flex items-center gap-2 px-3 flex-1 h-full pointer-events-none"
+      >
+        <span
+          data-tauri-drag-region
+          className="text-[11px] font-medium text-muted-foreground transition-colors duration-300 select-none pointer-events-none"
+        >
+          WindPulse
+        </span>
       </div>
       <div
         className="flex items-center h-full"
         style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         <button
           onClick={() => window.windpulse?.windowMinimize()}

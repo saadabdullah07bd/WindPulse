@@ -20,7 +20,8 @@
         "minimize": true,
         "maximize": true,
         "unmaximize": true,
-        "setAlwaysOnTop": true
+        "setAlwaysOnTop": true,
+        "startDragging": true
       }
     },
     "bundle": {
