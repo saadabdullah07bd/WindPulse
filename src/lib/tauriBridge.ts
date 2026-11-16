@@ -111,6 +111,7 @@ export function initTauriBridge(): boolean {
     updaterDownload: (downloadUrl: string, fileName: string) =>
       tauri.invoke<string>("updater_download", { downloadUrl, fileName }),
     updaterApplyAndRestart: () => tauri.invoke<void>("updater_apply_and_restart"),
+    updaterOpenInstaller: () => tauri.invoke<void>("updater_open_installer"),
 
     onUpdaterAvailable: (cb: (info: UpdateInfo) => void) => {
       let unlisten: (() => void) | undefined;

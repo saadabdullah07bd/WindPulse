@@ -213,7 +213,7 @@ const HowToUseModal = ({ open, onClose }: HowToUseModalProps) => {
 
             {/* Footer */}
             <div className="px-5 py-3 border-t border-border shrink-0 flex items-center justify-between">
-              <span className="text-[9px] text-muted-foreground">WindPulse V2.4</span>
+              <span className="text-[9px] text-muted-foreground">WindPulse V2.5</span>
               <button
                 onClick={onClose}
                 className="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-[11px] font-medium hover:opacity-90 transition-opacity"

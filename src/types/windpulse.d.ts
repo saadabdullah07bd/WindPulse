@@ -69,6 +69,7 @@ export interface WindPulseAPI {
   updaterStatus?: () => Promise<UpdaterStatus>;
   updaterDownload?: (downloadUrl: string, fileName: string) => Promise<string>;
   updaterApplyAndRestart?: () => Promise<void>;
+  updaterOpenInstaller?: () => Promise<void>;
 
   onUpdaterAvailable?: (cb: (info: UpdateInfo) => void) => () => void;
   onUpdaterProgress?: (cb: (progress: DownloadProgress) => void) => () => void;

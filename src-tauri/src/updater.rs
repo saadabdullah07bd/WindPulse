@@ -514,86 +514,58 @@ pub fn updater_apply_and_restart(state: State<UpdaterState>) -> Result<(), Strin
     {
         use std::os::windows::process::CommandExt;
 
-        let current_exe = std::env::current_exe().map_err(|e| e.to_string())?;
-        let pid = std::process::id();
-        let temp_dir = std::env::temp_dir();
-        let ps1_path = temp_dir.join("windpulse_apply_update.ps1");
-
-        let ps_escape = |s: &str| s.replace('\'', "''");
-        let installer_escaped = ps_escape(&installer_path.to_string_lossy());
-        let current_exe_escaped = ps_escape(&current_exe.to_string_lossy());
-        let ps1_escaped = ps_escape(&ps1_path.to_string_lossy());
-
-        // Wait for WindPulse PID to exit, run Inno Setup elevated with -Wait, then launch installed exe
-        let ps1_content = format!(
-            "$ErrorActionPreference = 'SilentlyContinue'\r\n\
-            $oldPid = {pid}\r\n\
-            $installer = '{installer_escaped}'\r\n\
-            $fallbackExe = '{current_exe_escaped}'\r\n\
-            $selfScript = '{ps1_escaped}'\r\n\
-            $p = Get-Process -Id $oldPid -ErrorAction SilentlyContinue\r\n\
-            if ($p) {{ $p.WaitForExit(10000) | Out-Null }}\r\n\
-            Start-Sleep -Milliseconds 400\r\n\
-            $argsList = @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', '/CLOSEAPPLICATIONS', '/FORCEAPPLICATIONS')\r\n\
-            $installed = $false\r\n\
-            try {{\r\n\
-              $proc = Start-Process -FilePath $installer -ArgumentList $argsList -Verb RunAs -Wait -PassThru -ErrorAction Stop\r\n\
-              if ($proc -and $proc.ExitCode -eq 0) {{ $installed = $true }}\r\n\
-            }} catch {{\r\n\
-              $installed = $false\r\n\
-            }}\r\n\
-            Start-Sleep -Milliseconds 500\r\n\
-            $launchExe = $null\r\n\
-            $regPaths = @(\r\n\
-              'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{{5E1C3782-E7A4-48E6-9E9A-A3D97DF019D2}}_is1',\r\n\
-              'HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{{5E1C3782-E7A4-48E6-9E9A-A3D97DF019D2}}_is1',\r\n\
-              'HKLM:\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{{5E1C3782-E7A4-48E6-9E9A-A3D97DF019D2}}_is1'\r\n\
-            )\r\n\
-            foreach ($rp in $regPaths) {{\r\n\
-              if (Test-Path $rp) {{\r\n\
-                $loc = (Get-ItemProperty -Path $rp -ErrorAction SilentlyContinue).InstallLocation\r\n\
-                if ($loc) {{\r\n\
-                  $candidate = Join-Path $loc 'WindPulse.exe'\r\n\
-                  if (Test-Path $candidate) {{ $launchExe = $candidate; break }}\r\n\
-                }}\r\n\
-              }}\r\n\
-            }}\r\n\
-            if (-not $launchExe -and (Test-Path \"$env:ProgramFiles\\WindPulse\\WindPulse.exe\")) {{\r\n\
-              $launchExe = \"$env:ProgramFiles\\WindPulse\\WindPulse.exe\"\r\n\
-            }}\r\n\
-            if (-not $launchExe -or (-not $installed -and (Test-Path $fallbackExe))) {{\r\n\
-              $launchExe = $fallbackExe\r\n\
-            }}\r\n\
-            if ($launchExe -and (Test-Path $launchExe)) {{\r\n\
-              Start-Process -FilePath $launchExe\r\n\
-            }}\r\n\
-            if ($installed) {{ Remove-Item -LiteralPath $installer -Force -ErrorAction SilentlyContinue }}\r\n\
-            Remove-Item -LiteralPath $selfScript -Force -ErrorAction SilentlyContinue\r\n"
-        );
-
-        std::fs::write(&ps1_path, ps1_content)
-            .map_err(|e| format!("Failed to create updater helper script: {}", e))?;
-
-        let mut cmd = std::process::Command::new("powershell.exe");
+        // Inno Setup has PrivilegesRequired=lowest and [Run] Flags: nowait.
+        // It runs immediately in user space without UAC prompts, installs to LocalAppData\Programs\WindPulse,
+        // and its [Run] entry automatically restarts the updated WindPulse.exe.
+        let mut cmd = std::process::Command::new(&installer_path);
         cmd.args([
-            "-NoProfile",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-WindowStyle",
-            "Hidden",
-            "-File",
-            ps1_path.to_str().unwrap(),
+            "/VERYSILENT",
+            "/SUPPRESSMSGBOXES",
+            "/NORESTART",
+            "/SP-",
+            "/CLOSEAPPLICATIONS",
+            "/FORCEAPPLICATIONS",
         ]);
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
         cmd.spawn()
-            .map_err(|e| format!("Failed to launch updater helper: {}", e))?;
+            .map_err(|e| format!("Failed to launch updater: {}", e))?;
 
+        std::thread::sleep(std::time::Duration::from_millis(150));
         std::process::exit(0);
     }
 
     #[cfg(not(target_os = "windows"))]
     {
         Err("Auto-update restart is only supported on Windows".to_string())
+    }
+}
+
+#[tauri::command]
+pub fn updater_open_installer(state: State<UpdaterState>) -> Result<(), String> {
+    let path = {
+        let guard = state.downloaded_installer.lock().unwrap();
+        guard.clone()
+    };
+
+    let installer_path = match path {
+        Some(p) if p.exists() => p,
+        Some(_) => return Err("Downloaded update installer file is missing".to_string()),
+        None => return Err("No downloaded update available to install".to_string()),
+    };
+
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new(&installer_path)
+            .spawn()
+            .map_err(|e| format!("Failed to open installer: {}", e))?;
+
+        std::thread::sleep(std::time::Duration::from_millis(150));
+        std::process::exit(0);
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        Err("Installer launch is only supported on Windows".to_string())
     }
 }
 
@@ -608,6 +580,7 @@ mod tests {
         assert!(is_newer_version("2.1.0", "v2.2.0"));
         assert!(is_newer_version("2.2.0", "v2.3.0"));
         assert!(is_newer_version("2.3.0", "v2.4.0"));
+        assert!(is_newer_version("2.4.0", "v2.5.0"));
         assert!(is_newer_version("2.1.0", "v3.0.0"));
         assert!(!is_newer_version("2.1.0", "v2.1.0"));
         assert!(!is_newer_version("2.1.0", "2.1.0"));

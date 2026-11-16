@@ -89,6 +89,7 @@ const Index = () => {
     checkError,
     checkForUpdates,
     applyUpdateAndRestart,
+    openDownloadedInstaller,
   } = useAutoUpdater();
 
   // Wireless debugging pairing
@@ -612,14 +613,24 @@ const Index = () => {
                         </p>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => applyUpdateAndRestart()}
-                      className="w-full py-1.5 px-3 rounded-lg bg-primary hover:opacity-90 text-primary-foreground text-[10px] font-medium flex items-center justify-center gap-1.5 whitespace-nowrap shadow-sm transition-all"
-                    >
-                      <RefreshCw size={11} />
-                      <span>Update Now</span>
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => applyUpdateAndRestart()}
+                        className="flex-1 py-1.5 px-3 rounded-lg bg-primary hover:opacity-90 text-primary-foreground text-[10px] font-medium flex items-center justify-center gap-1.5 whitespace-nowrap shadow-sm transition-all"
+                      >
+                        <RefreshCw size={11} />
+                        <span>Update Now</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openDownloadedInstaller()}
+                        className="py-1.5 px-2.5 rounded-lg bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground border border-border text-[10px] font-medium transition-colors whitespace-nowrap"
+                        title="Run Setup Wizard directly"
+                      >
+                        Manual
+                      </button>
+                    </div>
                   </div>
                 ) : isDownloading ? (
                   <div className="p-2.5 rounded-xl bg-secondary/40 border border-border space-y-1.5">
@@ -668,11 +679,11 @@ const Index = () => {
               <div className="space-y-1.5 pt-2 border-t border-border">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-muted-foreground">Version</span>
-                  <span className="text-[10px] font-semibold text-foreground">WindPulse V2.4</span>
+                  <span className="text-[10px] font-semibold text-foreground">WindPulse V2.5</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-muted-foreground">Platform</span>
-                  <span className="text-[10px] font-medium text-foreground">{wp.isElectron ? "Windows (Version V2.4)" : "Web Preview"}</span>
+                  <span className="text-[10px] font-medium text-foreground">{wp.isElectron ? "Windows (Version V2.5)" : "Web Preview"}</span>
                 </div>
                 <div className="pt-2 border-t border-border space-y-0.5">
                   <p className="text-[9px] text-muted-foreground">Developed by Muhammad Saad Abdullah</p>

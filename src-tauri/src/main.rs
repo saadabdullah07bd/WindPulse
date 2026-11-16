@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use adb::{AdbResponse, DevicesResponse, DeviceNameResponse, MdnsResponse};
 use scrcpy::{ScrcpyManager, ScrcpyStartResponse};
 use binaries::find_binary;
-use updater::{updater_check, updater_status, updater_download, updater_apply_and_restart, UpdaterState};
+use updater::{updater_check, updater_status, updater_download, updater_apply_and_restart, updater_open_installer, UpdaterState};
 
 #[derive(Serialize, Deserialize)]
 pub struct BinariesCheck {
@@ -136,6 +136,7 @@ fn main() {
             updater_status,
             updater_download,
             updater_apply_and_restart,
+            updater_open_installer,
         ])
         .run(tauri::generate_context!())
         .expect("error while running windpulse application");

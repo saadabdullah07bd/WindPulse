@@ -91,6 +91,16 @@ export function useAutoUpdater() {
     }
   }, []);
 
+  const openDownloadedInstaller = useCallback(async () => {
+    const wp = window.windpulse;
+    if (!wp?.updaterOpenInstaller) return;
+    try {
+      await wp.updaterOpenInstaller();
+    } catch (err) {
+      console.error("Failed to open installer:", err);
+    }
+  }, []);
+
   return {
     updateInfo,
     isDownloading,
@@ -100,5 +110,6 @@ export function useAutoUpdater() {
     checkError,
     checkForUpdates,
     applyUpdateAndRestart,
+    openDownloadedInstaller,
   };
 }

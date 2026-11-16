@@ -1,5 +1,5 @@
 #define MyAppName "WindPulse"
-#define MyAppVersion "2.4.0"
+#define MyAppVersion "2.5.0"
 #define MyAppPublisher "Muhammad Saad Abdullah"
 #define MyAppURL "https://github.com/saadabdullah07bd/WindPulse"
 #define MyAppExeName "WindPulse.exe"
@@ -13,6 +13,8 @@ AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
+PrivilegesRequired=lowest
+PrivilegesRequiredOverridesAllowed=commandline dialog
 DisableProgramGroupPage=yes
 CloseApplications=yes
 CloseApplicationsFilter=*.exe,*.dll
@@ -41,4 +43,4 @@ Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFile
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait

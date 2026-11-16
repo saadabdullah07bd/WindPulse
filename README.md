@@ -16,7 +16,7 @@
 
 <p>
   <a href="https://github.com/saadabdullah07bd/WindPulse/releases/latest">
-    <img src="https://img.shields.io/badge/⬇_Download_WindPulse_v2.4-00b4d8?style=for-the-badge&logoColor=white" alt="Download" />
+    <img src="https://img.shields.io/badge/⬇_Download_WindPulse_v2.5-00b4d8?style=for-the-badge&logoColor=white" alt="Download" />
   </a>
 </p>
 
@@ -74,7 +74,7 @@
 <h3>Quick Install (Recommended)</h3>
 
 <ol>
-  <li>Download <a href="https://github.com/saadabdullah07bd/WindPulse/releases/download/v2.4.0/WindPulseV2.0.Setupx64.exe"><strong>WindPulseV2.0.Setupx64.exe</strong></a> from <a href="https://github.com/saadabdullah07bd/WindPulse/releases/latest"><strong>Releases</strong></a></li>
+  <li>Download <a href="https://github.com/saadabdullah07bd/WindPulse/releases/download/v2.5.0/WindPulseV2.0.Setupx64.exe"><strong>WindPulseV2.0.Setupx64.exe</strong></a> from <a href="https://github.com/saadabdullah07bd/WindPulse/releases/latest"><strong>Releases</strong></a></li>
   <li>Run the installer</li>
   <li>Launch WindPulse from your desktop</li>
   <li>Connect your Android device via USB or Wi-Fi</li>
