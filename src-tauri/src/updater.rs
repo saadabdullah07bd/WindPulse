@@ -607,6 +607,7 @@ mod tests {
         assert!(is_newer_version("2.1.0", "2.1.1"));
         assert!(is_newer_version("2.1.0", "v2.2.0"));
         assert!(is_newer_version("2.2.0", "v2.3.0"));
+        assert!(is_newer_version("2.3.0", "v2.4.0"));
         assert!(is_newer_version("2.1.0", "v3.0.0"));
         assert!(!is_newer_version("2.1.0", "v2.1.0"));
         assert!(!is_newer_version("2.1.0", "2.1.0"));

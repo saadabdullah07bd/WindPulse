@@ -668,11 +668,11 @@ const Index = () => {
               <div className="space-y-1.5 pt-2 border-t border-border">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-muted-foreground">Version</span>
-                  <span className="text-[10px] font-semibold text-foreground">WindPulse V2.3</span>
+                  <span className="text-[10px] font-semibold text-foreground">WindPulse V2.4</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-muted-foreground">Platform</span>
-                  <span className="text-[10px] font-medium text-foreground">{wp.isElectron ? "Windows (Version V2.3)" : "Web Preview"}</span>
+                  <span className="text-[10px] font-medium text-foreground">{wp.isElectron ? "Windows (Version V2.4)" : "Web Preview"}</span>
                 </div>
                 <div className="pt-2 border-t border-border space-y-0.5">
                   <p className="text-[9px] text-muted-foreground">Developed by Muhammad Saad Abdullah</p>

@@ -3,9 +3,9 @@ import { motion } from "framer-motion";
 type Status = "initializing" | "ready" | "active" | "disconnected";
 
 const statusConfig: Record<Status, { label: string; dotClass: string; bgClass: string }> = {
-  initializing: { label: "Ready to connect", dotClass: "bg-warning", bgClass: "bg-warning/8 text-warning" },
-  ready: { label: "Ready", dotClass: "bg-success", bgClass: "bg-success/8 text-success" },
-  active: { label: "Active", dotClass: "bg-success", bgClass: "bg-success/8 text-success" },
+  initializing: { label: "Ready to connect", dotClass: "bg-success", bgClass: "bg-success/10 text-success" },
+  ready: { label: "Ready", dotClass: "bg-success", bgClass: "bg-success/10 text-success" },
+  active: { label: "Active", dotClass: "bg-success", bgClass: "bg-success/10 text-success" },
   disconnected: { label: "Disconnected", dotClass: "bg-destructive", bgClass: "bg-destructive/8 text-destructive" },
 };
 
