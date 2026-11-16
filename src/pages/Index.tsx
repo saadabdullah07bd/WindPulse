@@ -663,11 +663,11 @@ const Index = () => {
               <div className="space-y-1.5 pt-2 border-t border-border">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-muted-foreground">Version</span>
-                  <span className="text-[10px] font-semibold text-foreground">WindPulse v2</span>
+                  <span className="text-[10px] font-semibold text-foreground">WindPulse V2.2</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-muted-foreground">Platform</span>
-                  <span className="text-[10px] font-medium text-foreground">{wp.isElectron ? "Windows (Version V2.0)" : "Web Preview"}</span>
+                  <span className="text-[10px] font-medium text-foreground">{wp.isElectron ? "Windows (Version V2.2)" : "Web Preview"}</span>
                 </div>
                 <div className="pt-2 border-t border-border space-y-0.5">
                   <p className="text-[9px] text-muted-foreground">Developed by Muhammad Saad Abdullah</p>
@@ -766,7 +766,6 @@ const Index = () => {
                 <span className="text-[11px] font-semibold text-foreground flex items-center gap-1.5">
                   <Zap size={12} className="text-primary" /> Quick Presets
                 </span>
-                <span className="text-[9px] text-muted-foreground">scrcpy v5.0.1 Optimized</span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
                 {PRESETS.map((p) => {
@@ -785,7 +784,7 @@ const Index = () => {
                     >
                       <div className="flex items-center gap-1.5 mb-1">
                         <Icon size={12} className={isActive ? "text-primary" : "text-muted-foreground"} />
-                        <span className="text-[10px] font-bold truncate">{p.label}</span>
+                        <span className="text-[10px] font-semibold truncate">{p.label}</span>
                       </div>
                       <span className="text-[8px] leading-tight text-muted-foreground line-clamp-1">{p.desc}</span>
                     </button>

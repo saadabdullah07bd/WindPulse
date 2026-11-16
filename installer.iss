@@ -1,5 +1,5 @@
 #define MyAppName "WindPulse"
-#define MyAppVersion "2.1.0"
+#define MyAppVersion "2.2.0"
 #define MyAppPublisher "Muhammad Saad Abdullah"
 #define MyAppURL "https://github.com/saadabdullah07bd/WindPulse"
 #define MyAppExeName "WindPulse.exe"

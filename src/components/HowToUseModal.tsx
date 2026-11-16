@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
   X, Usb, Wifi, Monitor, Camera, Volume2, Tablet,
-  Smartphone, Settings, ArrowRightLeft, Play, Square
+  Smartphone, Settings, ArrowRightLeft, Zap, ListChecks, Keyboard
 } from "lucide-react";
 import windpulseIcon from "@/assets/windpulse-icon.png";
 
@@ -136,7 +136,9 @@ const HowToUseModal = ({ open, onClose }: HowToUseModalProps) => {
             <div className="flex-1 overflow-y-auto scrollbar-minimal px-5 py-4 space-y-4">
               {/* Quick Start */}
               <div className="bg-primary/5 border border-primary/10 rounded-xl p-3">
-                <p className="text-[11px] font-semibold text-primary mb-1">⚡ Quick Start</p>
+                <p className="text-[11px] font-semibold text-primary mb-1 flex items-center gap-1.5">
+                  <Zap size={13} /> Quick Start
+                </p>
                 <p className="text-[10px] text-muted-foreground leading-relaxed">
                   Plug in your Android via USB → Enable USB Debugging → Select your device → Click Start Mirror. That's it!
                 </p>
@@ -170,7 +172,9 @@ const HowToUseModal = ({ open, onClose }: HowToUseModalProps) => {
 
               {/* Prerequisites */}
               <div className="bg-secondary/50 rounded-xl p-3 space-y-1.5">
-                <p className="text-[11px] font-semibold text-foreground">📋 Prerequisites</p>
+                <p className="text-[11px] font-semibold text-foreground flex items-center gap-1.5">
+                  <ListChecks size={13} className="text-primary" /> Prerequisites
+                </p>
                 <ul className="space-y-0.5">
                   {[
                     "Android device with USB Debugging enabled",
@@ -188,7 +192,9 @@ const HowToUseModal = ({ open, onClose }: HowToUseModalProps) => {
 
               {/* Keyboard Shortcuts */}
               <div className="bg-secondary/50 rounded-xl p-3 space-y-1.5">
-                <p className="text-[11px] font-semibold text-foreground">⌨️ Keyboard Shortcuts</p>
+                <p className="text-[11px] font-semibold text-foreground flex items-center gap-1.5">
+                  <Keyboard size={13} className="text-primary" /> Keyboard Shortcuts
+                </p>
                 <div className="grid grid-cols-2 gap-1">
                   {[
                     ["Ctrl + Shift + S", "Start mirror"],
@@ -207,7 +213,7 @@ const HowToUseModal = ({ open, onClose }: HowToUseModalProps) => {
 
             {/* Footer */}
             <div className="px-5 py-3 border-t border-border shrink-0 flex items-center justify-between">
-              <span className="text-[9px] text-muted-foreground">WindPulse v2.0</span>
+              <span className="text-[9px] text-muted-foreground">WindPulse V2.2</span>
               <button
                 onClick={onClose}
                 className="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-[11px] font-medium hover:opacity-90 transition-opacity"
