@@ -47,16 +47,16 @@ const TitleBar = () => {
               applyUpdateAndRestart();
             }}
             style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
-            className="pointer-events-auto ml-2 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 text-[10px] font-semibold transition-all hover:scale-105"
+            className="pointer-events-auto ml-2 flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 hover:bg-primary/15 text-primary border border-primary/25 text-[10px] font-medium whitespace-nowrap transition-all"
             title="Update is ready! Click to restart and install"
           >
-            <RefreshCw size={10} className="animate-spin" style={{ animationDuration: "3s" }} />
-            <span>Restart to Update</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" />
+            <span>Update Now</span>
           </button>
         ) : isDownloading ? (
           <div
             style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
-            className="pointer-events-auto ml-2 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-[10px] font-medium"
+            className="pointer-events-auto ml-2 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-[10px] font-medium whitespace-nowrap"
             title="Downloading update in background..."
           >
             <Loader2 size={10} className="animate-spin" />

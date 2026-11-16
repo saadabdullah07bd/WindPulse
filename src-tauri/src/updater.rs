@@ -75,6 +75,18 @@ pub fn parse_version(v: &str) -> Vec<u32> {
         .collect()
 }
 
+pub fn extract_tag_from_release_url(url: &str) -> Option<String> {
+    let marker = "/releases/tag/";
+    let idx = url.find(marker)?;
+    let tag = &url[idx + marker.len()..];
+    let clean = tag.split(['?', '#']).next().unwrap_or(tag).trim();
+    if clean.is_empty() {
+        None
+    } else {
+        Some(clean.to_string())
+    }
+}
+
 pub fn is_newer_version(current: &str, latest: &str) -> bool {
     let curr = parse_version(current);
     let late = parse_version(latest);
@@ -92,14 +104,76 @@ pub fn is_newer_version(current: &str, latest: &str) -> bool {
     false
 }
 
+fn check_github_web_fallback(current_ver: &str) -> Result<UpdateInfo, String> {
+    let latest_url = "https://github.com/saadabdullah07bd/WindPulse/releases/latest";
+    let resp = ureq::get(latest_url)
+        .set("User-Agent", "WindPulse-App")
+        .timeout(Duration::from_secs(12))
+        .call()
+        .map_err(|e| format!("Fallback release check failed: {}", e))?;
+
+    let final_url = resp.get_url().to_string();
+    let tag_name = extract_tag_from_release_url(&final_url)
+        .ok_or_else(|| "Could not determine latest release tag".to_string())?;
+
+    if !is_newer_version(current_ver, &tag_name) {
+        return Ok(UpdateInfo {
+            available: false,
+            current_version: current_ver.to_string(),
+            latest_version: tag_name,
+            release_notes: None,
+            download_url: None,
+            file_name: None,
+            file_size: None,
+        });
+    }
+
+    let file_name = "WindPulseV2.0.Setupx64.exe".to_string();
+    let download_url = format!(
+        "https://github.com/saadabdullah07bd/WindPulse/releases/download/{}/{}",
+        tag_name, file_name
+    );
+
+    let head_resp = ureq::head(&download_url)
+        .set("User-Agent", "WindPulse-App")
+        .timeout(Duration::from_secs(12))
+        .call()
+        .map_err(|e| format!("Failed to verify release installer asset: {}", e))?;
+
+    let file_size = head_resp
+        .header("content-length")
+        .and_then(|s| s.parse::<u64>().ok());
+
+    Ok(UpdateInfo {
+        available: true,
+        current_version: current_ver.to_string(),
+        latest_version: tag_name,
+        release_notes: None,
+        download_url: Some(download_url),
+        file_name: Some(file_name),
+        file_size,
+    })
+}
+
 pub fn check_github_releases(current_ver: &str) -> Result<UpdateInfo, String> {
     let url = "https://api.github.com/repos/saadabdullah07bd/WindPulse/releases/latest";
-    let resp = ureq::get(url)
+    let resp = match ureq::get(url)
         .set("User-Agent", "WindPulse-App")
         .set("Accept", "application/vnd.github.v3+json")
         .timeout(Duration::from_secs(12))
         .call()
-        .map_err(|e| format!("Network request failed: {}", e))?;
+    {
+        Ok(r) => r,
+        Err(ureq::Error::Status(code, _)) if code == 403 || code == 429 => {
+            return check_github_web_fallback(current_ver);
+        }
+        Err(e) => {
+            if let Ok(fallback) = check_github_web_fallback(current_ver) {
+                return Ok(fallback);
+            }
+            return Err(format!("Network request failed: {}", e));
+        }
+    };
 
     let release: GithubRelease = resp
         .into_json()
@@ -163,10 +237,13 @@ pub fn check_github_releases(current_ver: &str) -> Result<UpdateInfo, String> {
 pub fn download_installer_file(
     download_url: &str,
     file_name: &str,
+    app: Option<&AppHandle>,
     window: Option<&Window>,
 ) -> Result<PathBuf, String> {
     let temp_dir = std::env::temp_dir();
     let temp_installer = temp_dir.join(format!("windpulse_update_{}", file_name));
+    let part_installer = temp_dir.join(format!("windpulse_update_{}.part", file_name));
+    let _ = std::fs::remove_file(&part_installer);
 
     let resp = ureq::get(download_url)
         .set("User-Agent", "WindPulse-App")
@@ -180,7 +257,7 @@ pub fn download_installer_file(
         .unwrap_or(0);
 
     let mut reader = resp.into_reader();
-    let mut file = File::create(&temp_installer)
+    let mut file = File::create(&part_installer)
         .map_err(|e| format!("Failed to create temporary file: {}", e))?;
 
     let mut buffer = [0u8; 32768];
@@ -188,20 +265,27 @@ pub fn download_installer_file(
     let mut last_percent: u8 = 0;
 
     loop {
-        let n = reader
-            .read(&mut buffer)
-            .map_err(|e| format!("Download stream read error: {}", e))?;
+        let n = reader.read(&mut buffer).map_err(|e| {
+            let _ = std::fs::remove_file(&part_installer);
+            format!("Download stream read error: {}", e)
+        })?;
         if n == 0 {
             break;
         }
-        file.write_all(&buffer[..n])
-            .map_err(|e| format!("Write error during download: {}", e))?;
+        file.write_all(&buffer[..n]).map_err(|e| {
+            let _ = std::fs::remove_file(&part_installer);
+            format!("Write error during download: {}", e)
+        })?;
         downloaded += n as u64;
 
         if total_bytes > 0 {
-            let percent = ((downloaded as f64 / total_bytes as f64) * 100.0) as u8;
+            let percent = ((downloaded as f64 / total_bytes as f64) * 100.0).min(100.0) as u8;
             if percent != last_percent {
                 last_percent = percent;
+                if let Some(handle) = app {
+                    let state = handle.state::<UpdaterState>();
+                    *state.download_percent.lock().unwrap() = percent;
+                }
                 if let Some(win) = window {
                     let _ = win.emit(
                         "updater:progress",
@@ -216,8 +300,20 @@ pub fn download_installer_file(
         }
     }
 
-    file.flush()
-        .map_err(|e| format!("Flush error during download: {}", e))?;
+    file.flush().map_err(|e| {
+        let _ = std::fs::remove_file(&part_installer);
+        format!("Flush error during download: {}", e)
+    })?;
+    drop(file);
+
+    if downloaded == 0 || (total_bytes > 0 && downloaded < total_bytes) {
+        let _ = std::fs::remove_file(&part_installer);
+        return Err("Incomplete update download".to_string());
+    }
+
+    let _ = std::fs::remove_file(&temp_installer);
+    std::fs::rename(&part_installer, &temp_installer)
+        .map_err(|e| format!("Failed to finalize downloaded installer: {}", e))?;
 
     if let Some(win) = window {
         let _ = win.emit(
@@ -234,77 +330,97 @@ pub fn download_installer_file(
 
 pub fn start_auto_update_worker(app: AppHandle) {
     thread::spawn(move || {
-        // Give UI 3 seconds to render completely before checking
+        // Give UI 3 seconds to render completely before first check
         thread::sleep(Duration::from_secs(3));
 
-        let current_version = env!("CARGO_PKG_VERSION");
-        let update_info = match check_github_releases(current_version) {
-            Ok(info) => info,
-            Err(e) => {
-                eprintln!("[AutoUpdater] Startup check failed: {}", e);
-                return;
+        loop {
+            let state = app.state::<UpdaterState>();
+            let already_ready = state.downloaded_installer.lock().unwrap().is_some();
+            let already_downloading = *state.is_downloading.lock().unwrap();
+
+            if already_ready {
+                break;
             }
-        };
 
-        if !update_info.available {
-            return;
-        }
+            if !already_downloading {
+                let current_version = env!("CARGO_PKG_VERSION");
+                if let Ok(update_info) = check_github_releases(current_version) {
+                    if update_info.available {
+                        {
+                            let mut info_guard = state.latest_info.lock().unwrap();
+                            *info_guard = Some(update_info.clone());
+                        }
 
-        let state = app.state::<UpdaterState>();
-        {
-            let mut info_guard = state.latest_info.lock().unwrap();
-            *info_guard = Some(update_info.clone());
-        }
+                        let _ = app.emit_all("updater:available", &update_info);
 
-        let _ = app.emit_all("updater:available", &update_info);
+                        if let Some(download_url) = update_info.download_url.clone() {
+                            let file_name = update_info
+                                .file_name
+                                .clone()
+                                .unwrap_or_else(|| "WindPulseV2.0.Setupx64.exe".to_string());
 
-        let download_url = match &update_info.download_url {
-            Some(u) => u.clone(),
-            None => return,
-        };
-        let file_name = update_info
-            .file_name
-            .clone()
-            .unwrap_or_else(|| "WindPulseV2.0.Setupx64.exe".to_string());
+                            let can_start = {
+                                let mut downloading = state.is_downloading.lock().unwrap();
+                                if *downloading {
+                                    false
+                                } else {
+                                    *downloading = true;
+                                    true
+                                }
+                            };
 
-        {
-            let mut downloading = state.is_downloading.lock().unwrap();
-            if *downloading {
-                return;
+                            if can_start {
+                                let window = app.get_window("main");
+                                match download_installer_file(
+                                    &download_url,
+                                    &file_name,
+                                    Some(&app),
+                                    window.as_ref(),
+                                ) {
+                                    Ok(path) => {
+                                        {
+                                            let mut inst_guard =
+                                                state.downloaded_installer.lock().unwrap();
+                                            *inst_guard = Some(path.clone());
+                                        }
+                                        *state.is_downloading.lock().unwrap() = false;
+
+                                        let _ = app.emit_all(
+                                            "updater:ready",
+                                            serde_json::json!({
+                                                "version": update_info.latest_version,
+                                                "installer_path": path.to_string_lossy().to_string(),
+                                            }),
+                                        );
+                                        break;
+                                    }
+                                    Err(e) => {
+                                        eprintln!("[AutoUpdater] Download failed: {}", e);
+                                        *state.is_downloading.lock().unwrap() = false;
+                                        let _ = app.emit_all(
+                                            "updater:error",
+                                            serde_json::json!({ "error": e }),
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
-            *downloading = true;
-        }
 
-        let window = app.get_window("main");
-        match download_installer_file(&download_url, &file_name, window.as_ref()) {
-            Ok(path) => {
-                let mut inst_guard = state.downloaded_installer.lock().unwrap();
-                *inst_guard = Some(path.clone());
-                let mut downloading = state.is_downloading.lock().unwrap();
-                *downloading = false;
-
-                let _ = app.emit_all(
-                    "updater:ready",
-                    serde_json::json!({
-                        "version": update_info.latest_version,
-                        "installer_path": path.to_string_lossy().to_string(),
-                    }),
-                );
-            }
-            Err(e) => {
-                eprintln!("[AutoUpdater] Download failed: {}", e);
-                let mut downloading = state.is_downloading.lock().unwrap();
-                *downloading = false;
-                let _ = app.emit_all("updater:error", serde_json::json!({ "error": e }));
-            }
+            // Re-check every 30 minutes while running
+            thread::sleep(Duration::from_secs(1800));
         }
     });
 }
 
 #[tauri::command]
-pub fn updater_check() -> Result<UpdateInfo, String> {
+pub fn updater_check(state: State<UpdaterState>) -> Result<UpdateInfo, String> {
     let current_version = env!("CARGO_PKG_VERSION");
-    check_github_releases(current_version)
+    let info = check_github_releases(current_version)?;
+    *state.latest_info.lock().unwrap() = Some(info.clone());
+    Ok(info)
 }
 
 #[tauri::command]
@@ -349,23 +465,30 @@ pub fn updater_download(
         let window = app_clone.get_window("main");
         let state = app_clone.state::<UpdaterState>();
 
-        match download_installer_file(&download_url, &file_name, window.as_ref()) {
+        match download_installer_file(&download_url, &file_name, Some(&app_clone), window.as_ref()) {
             Ok(path) => {
-                let mut inst_guard = state.downloaded_installer.lock().unwrap();
-                *inst_guard = Some(path.clone());
-                let mut downloading = state.is_downloading.lock().unwrap();
-                *downloading = false;
+                {
+                    let mut inst_guard = state.downloaded_installer.lock().unwrap();
+                    *inst_guard = Some(path.clone());
+                }
+                *state.is_downloading.lock().unwrap() = false;
+                let latest_version = state
+                    .latest_info
+                    .lock()
+                    .unwrap()
+                    .as_ref()
+                    .map(|i| i.latest_version.clone());
 
                 let _ = app_clone.emit_all(
                     "updater:ready",
                     serde_json::json!({
+                        "version": latest_version,
                         "installer_path": path.to_string_lossy().to_string(),
                     }),
                 );
             }
             Err(e) => {
-                let mut downloading = state.is_downloading.lock().unwrap();
-                *downloading = false;
+                *state.is_downloading.lock().unwrap() = false;
                 let _ = app_clone.emit_all("updater:error", serde_json::json!({ "error": e }));
             }
         }
@@ -382,7 +505,8 @@ pub fn updater_apply_and_restart(state: State<UpdaterState>) -> Result<(), Strin
     };
 
     let installer_path = match path {
-        Some(p) => p,
+        Some(p) if p.exists() => p,
+        Some(_) => return Err("Downloaded update installer file is missing".to_string()),
         None => return Err("No downloaded update available to install".to_string()),
     };
 
@@ -391,32 +515,78 @@ pub fn updater_apply_and_restart(state: State<UpdaterState>) -> Result<(), Strin
         use std::os::windows::process::CommandExt;
 
         let current_exe = std::env::current_exe().map_err(|e| e.to_string())?;
+        let pid = std::process::id();
         let temp_dir = std::env::temp_dir();
-        let bat_path = temp_dir.join("windpulse_apply_update.bat");
+        let ps1_path = temp_dir.join("windpulse_apply_update.ps1");
 
-        let bat_content = format!(
-            "@echo off\r\n\
-            timeout /t 2 /nobreak >nul\r\n\
-            start \"\" /wait \"{}\" /VERYSILENT /SUPPRESSMSGBOXES\r\n\
-            if exist \"{}\" (\r\n\
-                start \"\" \"{}\"\r\n\
-            ) else if exist \"%ProgramFiles%\\WindPulse\\WindPulse.exe\" (\r\n\
-                start \"\" \"%ProgramFiles%\\WindPulse\\WindPulse.exe\"\r\n\
+        let ps_escape = |s: &str| s.replace('\'', "''");
+        let installer_escaped = ps_escape(&installer_path.to_string_lossy());
+        let current_exe_escaped = ps_escape(&current_exe.to_string_lossy());
+        let ps1_escaped = ps_escape(&ps1_path.to_string_lossy());
+
+        // Wait for WindPulse PID to exit, run Inno Setup elevated with -Wait, then launch installed exe
+        let ps1_content = format!(
+            "$ErrorActionPreference = 'SilentlyContinue'\r\n\
+            $oldPid = {pid}\r\n\
+            $installer = '{installer_escaped}'\r\n\
+            $fallbackExe = '{current_exe_escaped}'\r\n\
+            $selfScript = '{ps1_escaped}'\r\n\
+            $p = Get-Process -Id $oldPid -ErrorAction SilentlyContinue\r\n\
+            if ($p) {{ $p.WaitForExit(10000) | Out-Null }}\r\n\
+            Start-Sleep -Milliseconds 400\r\n\
+            $argsList = @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', '/CLOSEAPPLICATIONS', '/FORCEAPPLICATIONS')\r\n\
+            $installed = $false\r\n\
+            try {{\r\n\
+              $proc = Start-Process -FilePath $installer -ArgumentList $argsList -Verb RunAs -Wait -PassThru -ErrorAction Stop\r\n\
+              if ($proc -and $proc.ExitCode -eq 0) {{ $installed = $true }}\r\n\
+            }} catch {{\r\n\
+              $installed = $false\r\n\
+            }}\r\n\
+            Start-Sleep -Milliseconds 500\r\n\
+            $launchExe = $null\r\n\
+            $regPaths = @(\r\n\
+              'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{{5E1C3782-E7A4-48E6-9E9A-A3D97DF019D2}}_is1',\r\n\
+              'HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{{5E1C3782-E7A4-48E6-9E9A-A3D97DF019D2}}_is1',\r\n\
+              'HKLM:\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{{5E1C3782-E7A4-48E6-9E9A-A3D97DF019D2}}_is1'\r\n\
             )\r\n\
-            del \"%~f0\"\r\n",
-            installer_path.to_string_lossy(),
-            current_exe.to_string_lossy(),
-            current_exe.to_string_lossy()
+            foreach ($rp in $regPaths) {{\r\n\
+              if (Test-Path $rp) {{\r\n\
+                $loc = (Get-ItemProperty -Path $rp -ErrorAction SilentlyContinue).InstallLocation\r\n\
+                if ($loc) {{\r\n\
+                  $candidate = Join-Path $loc 'WindPulse.exe'\r\n\
+                  if (Test-Path $candidate) {{ $launchExe = $candidate; break }}\r\n\
+                }}\r\n\
+              }}\r\n\
+            }}\r\n\
+            if (-not $launchExe -and (Test-Path \"$env:ProgramFiles\\WindPulse\\WindPulse.exe\")) {{\r\n\
+              $launchExe = \"$env:ProgramFiles\\WindPulse\\WindPulse.exe\"\r\n\
+            }}\r\n\
+            if (-not $launchExe -or (-not $installed -and (Test-Path $fallbackExe))) {{\r\n\
+              $launchExe = $fallbackExe\r\n\
+            }}\r\n\
+            if ($launchExe -and (Test-Path $launchExe)) {{\r\n\
+              Start-Process -FilePath $launchExe\r\n\
+            }}\r\n\
+            if ($installed) {{ Remove-Item -LiteralPath $installer -Force -ErrorAction SilentlyContinue }}\r\n\
+            Remove-Item -LiteralPath $selfScript -Force -ErrorAction SilentlyContinue\r\n"
         );
 
-        std::fs::write(&bat_path, bat_content)
-            .map_err(|e| format!("Failed to create updater batch script: {}", e))?;
+        std::fs::write(&ps1_path, ps1_content)
+            .map_err(|e| format!("Failed to create updater helper script: {}", e))?;
 
-        let mut cmd = std::process::Command::new("cmd.exe");
-        cmd.args(&["/c", bat_path.to_str().unwrap()]);
+        let mut cmd = std::process::Command::new("powershell.exe");
+        cmd.args([
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-WindowStyle",
+            "Hidden",
+            "-File",
+            ps1_path.to_str().unwrap(),
+        ]);
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
         cmd.spawn()
-            .map_err(|e| format!("Failed to launch updater: {}", e))?;
+            .map_err(|e| format!("Failed to launch updater helper: {}", e))?;
 
         std::process::exit(0);
     }
@@ -436,10 +606,27 @@ mod tests {
         assert!(is_newer_version("2.0.0", "v2.1.0"));
         assert!(is_newer_version("2.1.0", "2.1.1"));
         assert!(is_newer_version("2.1.0", "v2.2.0"));
+        assert!(is_newer_version("2.2.0", "v2.3.0"));
         assert!(is_newer_version("2.1.0", "v3.0.0"));
         assert!(!is_newer_version("2.1.0", "v2.1.0"));
         assert!(!is_newer_version("2.1.0", "2.1.0"));
         assert!(!is_newer_version("2.1.1", "v2.1.0"));
         assert!(!is_newer_version("3.0.0", "v2.1.0"));
+    }
+
+    #[test]
+    fn test_extract_tag_from_release_url() {
+        assert_eq!(
+            extract_tag_from_release_url("https://github.com/saadabdullah07bd/WindPulse/releases/tag/v2.3.0"),
+            Some("v2.3.0".to_string())
+        );
+        assert_eq!(
+            extract_tag_from_release_url("https://github.com/saadabdullah07bd/WindPulse/releases/tag/v2.3.0?foo=1"),
+            Some("v2.3.0".to_string())
+        );
+        assert_eq!(
+            extract_tag_from_release_url("https://github.com/saadabdullah07bd/WindPulse/releases"),
+            None
+        );
     }
 }

@@ -86,6 +86,7 @@ const Index = () => {
     isReady,
     progress: updateProgress,
     isChecking: isCheckingUpdates,
+    checkError,
     checkForUpdates,
     applyUpdateAndRestart,
   } = useAutoUpdater();
@@ -577,50 +578,54 @@ const Index = () => {
 
               {/* Updates Section */}
               <div className="space-y-2 pt-2 border-t border-border">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <RefreshCw size={12} className="text-primary" />
-                    <span className="text-[11px] font-semibold text-foreground">Updates</span>
+                    <span className="text-[11px] font-semibold text-foreground whitespace-nowrap">Updates</span>
                   </div>
                   {isReady ? (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 font-semibold border border-emerald-500/30">
+                    <span className="inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full bg-success/10 text-success font-medium border border-success/25 whitespace-nowrap shrink-0">
+                      <span className="w-1.5 h-1.5 rounded-full bg-success" />
                       Ready to install
                     </span>
                   ) : isDownloading ? (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium whitespace-nowrap shrink-0">
                       Downloading {updateProgress?.percentage ? `${updateProgress.percentage}%` : "..."}
                     </span>
                   ) : (
-                    <span className="text-[9px] text-muted-foreground">Automatic</span>
+                    <span className="text-[9px] text-muted-foreground whitespace-nowrap shrink-0">Automatic</span>
                   )}
                 </div>
 
                 {isReady ? (
-                  <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 space-y-2">
-                    <div className="flex items-start gap-2">
-                      <Check size={14} className="text-emerald-500 shrink-0 mt-0.5" />
-                      <div className="space-y-0.5">
-                        <p className="text-[11px] font-semibold text-foreground">
-                          {updateInfo?.latest_version ? `${updateInfo.latest_version} ` : ""}Update Downloaded!
+                  <div className="p-2.5 rounded-xl bg-secondary/40 border border-border space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-4 h-4 rounded-full bg-success/15 text-success flex items-center justify-center shrink-0">
+                        <Check size={10} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-medium text-foreground truncate">
+                          {updateInfo?.latest_version ? `${updateInfo.latest_version} ` : ""}Ready to install
                         </p>
-                        <p className="text-[10px] text-muted-foreground leading-relaxed">
-                          Restarting will silently install the update and reopen WindPulse automatically.
+                        <p className="text-[9px] text-muted-foreground truncate">
+                          Restart to apply update silently
                         </p>
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => applyUpdateAndRestart()}
-                      className="w-full py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold flex items-center justify-center gap-1.5 shadow-sm transition-colors"
+                      className="w-full py-1.5 px-3 rounded-lg bg-primary hover:opacity-90 text-primary-foreground text-[10px] font-medium flex items-center justify-center gap-1.5 whitespace-nowrap shadow-sm transition-all"
                     >
-                      <RefreshCw size={12} /> Restart & Install Update
+                      <RefreshCw size={11} />
+                      <span>Update Now</span>
                     </button>
                   </div>
                 ) : isDownloading ? (
-                  <div className="p-2 rounded-lg bg-secondary/50 border border-border space-y-1.5">
-                    <div className="flex justify-between items-center text-[10px]">
-                      <span className="text-muted-foreground">Downloading update in background...</span>
-                      <span className="font-semibold text-primary tabular-nums">
+                  <div className="p-2.5 rounded-xl bg-secondary/40 border border-border space-y-1.5">
+                    <div className="flex justify-between items-center text-[10px] gap-2">
+                      <span className="text-muted-foreground truncate">Downloading update...</span>
+                      <span className="font-semibold text-primary tabular-nums whitespace-nowrap shrink-0">
                         {updateProgress?.percentage || 0}%
                       </span>
                     </div>
@@ -632,20 +637,20 @@ const Index = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between p-2 rounded-lg bg-secondary/30 border border-border">
-                    <div className="space-y-0.5">
-                      <p className="text-[10px] font-medium text-foreground">
-                        {updateInfo && !updateInfo.available ? "You're on the latest version" : "Auto-update enabled"}
+                  <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-secondary/40 border border-border">
+                    <div className="min-w-0 space-y-0.5">
+                      <p className="text-[10px] font-medium text-foreground truncate">
+                        {updateInfo && !updateInfo.available ? "You're up to date" : "Auto-update enabled"}
                       </p>
-                      <p className="text-[9px] text-muted-foreground">
-                        Updates download automatically in the background
+                      <p className="text-[9px] text-muted-foreground truncate">
+                        {checkError ? "Check failed — try again" : "Checks in background"}
                       </p>
                     </div>
                     <button
                       type="button"
                       disabled={isCheckingUpdates}
                       onClick={() => checkForUpdates()}
-                      className="px-2.5 py-1 rounded bg-secondary hover:bg-secondary/80 text-foreground text-[10px] font-medium transition-colors flex items-center gap-1 border border-border disabled:opacity-50"
+                      className="px-2.5 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/15 text-primary border border-primary/20 text-[10px] font-medium transition-colors flex items-center gap-1 whitespace-nowrap shrink-0 disabled:opacity-50"
                     >
                       {isCheckingUpdates ? (
                         <>
@@ -663,11 +668,11 @@ const Index = () => {
               <div className="space-y-1.5 pt-2 border-t border-border">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-muted-foreground">Version</span>
-                  <span className="text-[10px] font-semibold text-foreground">WindPulse V2.2</span>
+                  <span className="text-[10px] font-semibold text-foreground">WindPulse V2.3</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-muted-foreground">Platform</span>
-                  <span className="text-[10px] font-medium text-foreground">{wp.isElectron ? "Windows (Version V2.2)" : "Web Preview"}</span>
+                  <span className="text-[10px] font-medium text-foreground">{wp.isElectron ? "Windows (Version V2.3)" : "Web Preview"}</span>
                 </div>
                 <div className="pt-2 border-t border-border space-y-0.5">
                   <p className="text-[9px] text-muted-foreground">Developed by Muhammad Saad Abdullah</p>
@@ -910,43 +915,36 @@ const Index = () => {
             initial={{ opacity: 0, y: 40, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed bottom-4 right-4 z-50 max-w-sm p-3 rounded-xl bg-card border border-emerald-500/30 shadow-xl shadow-emerald-500/5 flex items-start gap-2.5"
+            className="fixed bottom-4 right-4 z-50 px-3.5 py-2.5 rounded-xl bg-card border border-border shadow-xl flex items-center gap-3"
           >
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
-              <RefreshCw size={14} className="animate-spin" style={{ animationDuration: "3s" }} />
+            <div className="w-7 h-7 rounded-lg bg-success/10 text-success flex items-center justify-center shrink-0">
+              <Check size={14} />
             </div>
-            <div className="flex-1 min-w-0 pr-1">
-              <p className="text-[11px] font-semibold text-foreground">
-                Update Ready to Install
+            <div className="min-w-0">
+              <p className="text-[11px] font-medium text-foreground whitespace-nowrap">
+                {updateInfo?.latest_version ? `Update ${updateInfo.latest_version} ready` : "Update ready"}
               </p>
-              <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">
-                {updateInfo?.latest_version ? `${updateInfo.latest_version} ` : "A new version "}
-                has been downloaded in the background.
+              <p className="text-[9px] text-muted-foreground whitespace-nowrap">
+                Downloaded in background
               </p>
-              <div className="flex items-center gap-2 mt-2">
-                <button
-                  type="button"
-                  onClick={() => applyUpdateAndRestart()}
-                  className="px-2.5 py-1 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-semibold flex items-center gap-1 shadow-sm transition-colors"
-                >
-                  <RefreshCw size={10} /> Restart Now
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setUpdateBannerDismissed(true)}
-                  className="px-2 py-1 rounded-md text-muted-foreground hover:text-foreground text-[10px] transition-colors"
-                >
-                  Later
-                </button>
-              </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setUpdateBannerDismissed(true)}
-              className="text-muted-foreground hover:text-foreground p-0.5 rounded transition-colors"
-            >
-              <X size={12} />
-            </button>
+            <div className="flex items-center gap-1.5 shrink-0 ml-1">
+              <button
+                type="button"
+                onClick={() => applyUpdateAndRestart()}
+                className="px-2.5 py-1.5 rounded-lg bg-primary hover:opacity-90 text-primary-foreground text-[10px] font-medium flex items-center gap-1.5 whitespace-nowrap shadow-sm transition-all"
+              >
+                <RefreshCw size={10} /> Update Now
+              </button>
+              <button
+                type="button"
+                onClick={() => setUpdateBannerDismissed(true)}
+                className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-secondary transition-colors"
+                title="Later"
+              >
+                <X size={12} />
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
